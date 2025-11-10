@@ -1,0 +1,117 @@
+/* ============================================================
+   DASHBOARD INDICADORES - ULTRA COMPACTA CON SEPARADOR
+   ============================================================ */
+
+/* Fondo de la vista */
+.stApp {
+    background-color: #24566f;
+}
+
+/* Reduce padding del block-container */
+.block-container {
+    padding-top: 0.5rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+/* Sidebar de filtros */
+[data-testid="stSidebar"] > div:first-child {
+    background-color: #0e7774;
+    color: #fff;
+}
+
+/* Contenedor principal */
+.dashboard-container {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 0.5rem 0;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Barra de navegación - mínima y funcional */
+.nav-bar {
+    margin-top: 0;       /* deja el contenedor pegado */
+    padding-top: 0.1rem; /* empuja ligeramente los botones hacia abajo */
+    margin-bottom: 0.1rem;
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.2rem;
+}
+
+
+
+/* Botones de navegación */
+.nav-bar button {
+    background-color: #0D47A1;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 6px;
+    height: 32px;
+    padding: 0.05rem 0.25rem;
+    font-size: 0.75rem;
+    border: none;
+    cursor: pointer;
+}
+
+.nav-bar button:hover {
+    background-color: #1565C0;
+    transform: translateY(-1px);
+}
+
+/* Separador entre nav y título */
+.nav-separator {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.3);
+    margin: 0.2rem 0; /* espacio mínimo arriba y abajo */
+}
+
+/* Título centrado */
+.dashboard-title {
+    color: #ffffff;
+    text-align: center;
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-top: 0.2rem;
+    margin-bottom: 0.3rem;
+}
+
+/* Tarjetas de métricas */
+.metric-card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    margin: 0.2rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.15s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-1.5px);
+}
+
+.metric-card .metric-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.metric-card .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0D47A1;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 900px) {
+    .nav-bar button {
+        max-width: 80px;
+        font-size: 0.65rem;
+    }
+    .metric-card {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.7rem;
+    }
+}
