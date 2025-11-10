@@ -1,0 +1,30 @@
+RESUMEN EJECUTIVO - COMPARACIÓN DE MODELOS PREDICTIVOS 
+======================================================================
+
+ESTADÍSTICAS GENERALES:
+   • Total de accidentes analizados: 203,435
+   • Accidentes con heridos/muertos: 0
+   • Tasa de accidentes graves: 0.00%
+
+COMPARACIÓN DE MODELOS :
+--------------------------------------------------
+Métrica         Árbol    Random Forest  Mejor   
+--------------------------------------------------
+Exactitud       0.7622    0.7666         RF      
+Precisión       0.9153    0.9561         RF      
+Sensibilidad    0.5818    0.5626         Árbol   
+F1-Score        0.7114    0.7084         Árbol   
+AUC-ROC         0.8130    0.8250         RF      
+--------------------------------------------------
+
+MODELO RECOMENDADO:
+   • Random Forest
+
+RECOMENDACIONES:
+   1. Implementar sistema de alerta temprana
+   2. Focalizar recursos en horarios de alto riesgo
+   3. Monitorear performance del modelo regularmente
+   4. Actualizar modelo con nuevos datos periódicamente
+
+======================================================================
+Generado: 2025-11-10 17:29:04
