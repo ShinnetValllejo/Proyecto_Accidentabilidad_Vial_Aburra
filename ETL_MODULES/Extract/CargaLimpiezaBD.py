@@ -7,8 +7,6 @@ import pandas as pd
 from sqlalchemy import create_engine
 from pathlib import Path
 
-
-
 # ---------- CONFIGURACIÓN ----------
 # CSV remoto
 CSV_PATH = "https://raw.githubusercontent.com/ShinnetValllejo/Proyecto_Accidentabilidad_Vial_Aburra/main/DATASETS/Fuentes/AMVA_Accidentalidad_20191022_2.csv"

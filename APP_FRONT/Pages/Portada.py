@@ -1,19 +1,37 @@
-from pathlib import Path 
+from pathlib import Path
 import streamlit as st
 import base64
 
-# Ruta de imagen desde raíz del proyecto
-BASE_DIR = Path(__file__).parents[1]
-IMG_PATH = BASE_DIR / "Static" / "Map_portada.jpeg"
+# ==========================================================
+# CONFIGURACIÓN DE RUTA BASE DEL PROYECTO
+# ==========================================================
+def find_project_root(marker: str = '.project_root') -> Path:
+    current_dir = Path(__file__).resolve().parent
+    while current_dir != current_dir.parent:
+        if (current_dir / marker).exists():
+            return current_dir
+        current_dir = current_dir.parent
+    raise FileNotFoundError(
+        f"No se pudo encontrar la raíz del proyecto. "
+        f"Asegúrate de que existe un archivo llamado '{marker}' en la carpeta raíz."
+    )
 
+PROJECT_ROOT = find_project_root()
+APP_DIR = PROJECT_ROOT / "APP_FRONT"
+IMG_PATH = APP_DIR / "Static" / "Map_portada.jpeg"
+
+# ==========================================================
+# FUNCIONES AUXILIARES
+# ==========================================================
 def get_base64_of_image(img_path):
     with open(img_path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
+# ==========================================================
+# FUNCIÓN PRINCIPAL DE LA PORTADA
+# ==========================================================
 def mostrar_portada():
-    # --- INICIO DE LA MODIFICACIÓN ---
-    # Este CSS se aplica SOLO a la portada y oculta el panel lateral COMPLETO
-    # (incluido el botón para abrirlo).
+    # Ocultar barra lateral
     st.markdown(
         """
         <style>
@@ -24,8 +42,8 @@ def mostrar_portada():
         """,
         unsafe_allow_html=True,
     )
-    # --- FIN DE LA MODIFICACIÓN ---
 
+    # Fondo con imagen
     if IMG_PATH.exists():
         bg_base64 = get_base64_of_image(IMG_PATH)
         st.markdown(
@@ -45,6 +63,7 @@ def mostrar_portada():
     else:
         st.warning(f"No se encontró la imagen de portada: {IMG_PATH}")
 
+    # Contenido principal
     st.markdown(
         """
         <div class="content-container">

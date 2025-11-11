@@ -27,4 +27,4 @@ RECOMENDACIONES:
    4. Actualizar modelo con nuevos datos periódicamente
 
 ======================================================================
-Generado: 2025-11-10 17:29:04
+Generado: 2025-11-11 11:59:03

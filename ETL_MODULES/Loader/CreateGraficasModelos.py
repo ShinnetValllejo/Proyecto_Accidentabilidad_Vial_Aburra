@@ -54,33 +54,26 @@ def find_project_root(marker: str = '.project_root') -> Path:
         f"Asegúrate de que existe un archivo llamado '{marker}' en la carpeta raíz."
     )
 
-# ======================================================
-# CONFIGURACIÓN INICIAL (RUTAS RELATIVAS)
-# ======================================================
-
-# Usamos nuestra nueva y robusta función para encontrar la raíz
 BASE_DIR = find_project_root()
-
-# El resto de las rutas ahora se construirán correctamente
 DB_PATH = BASE_DIR / "DATASETS" / "Destino"/ "Proyecto_Accidentalidad_Vial_Antioquia.db"
 OUT_DIR = BASE_DIR / "ETL_MODULES" / "Transform" / "Graficas_Salida"
 MODEL_DIR = BASE_DIR / "ETL_MODULES" / "Transform" / "Modelo_Predict"
 
-# PALETAS DE COLORES  PARA MEJOR CONTRASTE
-PALETTE_VIBRANT = [
-    "#E74C3C", "#3498DB", "#2ECC71", "#F39C12", "#9B59B6", 
-    "#1ABC9C", "#D35400", "#27AE60", "#8E44AD", "#F1C40F",
-    "#16A085", "#C0392B", "#2980B9", "#E67E22", "#7F8C8D"
-]
-
-PALETTE_GRADIENT = ["#FF9E80", "#FF6D42", "#FF3D00", "#DD2C00"]
-PALETTE_BRIGHT = ["#2E86AB", "#A23B72", "#F18F01", "#C73E1D", "#3B1C32"]
-PALETTE_MODEL_1 = "#E74C3C"
-PALETTE_MODEL_2 = "#3498DB"
-
 # =============================================================================
 # FUNCIONES UTILITARIAS 
 # =============================================================================
+
+# PALETAS DE COLORES  PARA MEJOR CONTRASTE
+
+PALETTE_VIBRANT = [
+    "#137598","#026937", "#f9a12c", "#8dc63f", "#3ebdac","#70205b","#ef434d",
+    "#35944b", "#43b649","#069a7e", "#0e7774", "069a7e",
+]
+
+PALETTE_GRADIENT = ["#FF9E80", "#FF6D42", "#FF3D00", "#DD2C00"]
+PALETTE_BRIGHT = ["#f9a12c", "#8dc63f", "#3ebdac","#70205b","#ef434d"]
+PALETTE_MODEL_1 = "#137598"
+PALETTE_MODEL_2 = "#8dc63f"
 
 def load_table(db_path: Path, table: str) -> pd.DataFrame:
     """Carga datos desde la base de datos SQLite"""
@@ -107,7 +100,7 @@ def num_fmt(v):
     return f"{int(v):,}"
 
 def paleta_presentacion(n: int):
-    """Genera paleta de colores con mejor contraste"""
+    """Genera paleta de colores"""
     if n <= 0:
         return []
     if n <= len(PALETTE_VIBRANT):
@@ -116,7 +109,7 @@ def paleta_presentacion(n: int):
         return sns.color_palette("husl", n_colors=n)
 
 def format_torta(series: pd.Series, title: str, path: Path):
-    """Genera gráfica de torta con mejor legibilidad"""
+    """Genera gráfica de torta"""
     try:
         series = series.copy()
         mask = (~series.index.isna()) & (series.index.notna()) & (series.notna())
@@ -128,7 +121,7 @@ def format_torta(series: pd.Series, title: str, path: Path):
             print(f"No hay datos válidos para: {title}")
             return
             
-        plt.rcParams['font.size'] = 10
+        plt.rcParams['font.size'] = 12
         plt.rcParams['font.weight'] = 'bold'
         
         colors = paleta_presentacion(len(series))
@@ -138,27 +131,29 @@ def format_torta(series: pd.Series, title: str, path: Path):
         
         def autopct_func(pct):
             absolute = int(round(pct * total / 100.0))
-            if pct > 5:
-                return f'{absolute:,}'
-            else:
-                return ''
+            return f'{absolute:,}'
+        
+        explode = [0.03] * len(series)
+        if 'MUERTOS' in series.index:
+            idx_muertos = list(series.index).index('MUERTOS')
+            explode[idx_muertos] = 0.15
         
         wedges, texts, autotexts = ax.pie(
             series.values, 
             labels=None,
             autopct=autopct_func,
-            startangle=90,
+            startangle=10,
             colors=colors,
-            textprops={'fontsize': 9, 'fontweight': 'bold', 'color': 'white'},
-            explode=[0.03] * len(series),
-            shadow=True,
+            textprops={'fontsize': 12, 'fontweight': 'bold', 'color': 'white'},
+            explode=explode,
+            shadow=False,
             wedgeprops={'edgecolor': 'white', 'linewidth': 1.5}
         )
         
         for autotext in autotexts:
             autotext.set_color('white')
             autotext.set_fontweight('bold')
-            autotext.set_fontsize(8)
+            autotext.set_fontsize(12)
             autotext.set_bbox(dict(boxstyle="round,pad=0.2", facecolor='black', alpha=0.7, edgecolor='none'))
             
         legend_labels = [f'{label} ({value:,})' for label, value in zip(series.index, series.values)]
@@ -239,6 +234,158 @@ def format_barra(series: pd.Series, title: str, xlabel: str, ylabel: str, path: 
     except Exception as e:
         print(f"Error en gráfica de barras '{title}': {e}")
 
+def mapa_calor_accidentes(df: pd.DataFrame, path: Path):
+    """Genera mapa de calor de concentración de accidentes por ubicación"""
+    try:
+        df_clean = df.copy()
+        
+        # Filtrar y limpiar datos de ubicación
+        df_clean = df_clean[~df_clean["MUNICIPIO"].str.contains('DESCONOCIDO|SIN INFORMACIÓN|NAN', case=False, na=False)]
+        df_clean = df_clean[~df_clean["COMUNA"].str.contains('DESCONOCIDO|SIN INFORMACIÓN|NAN', case=False, na=False)]
+        
+        if df_clean.empty:
+            print("No hay datos válidos para el mapa de calor")
+            return
+        
+        # Crear matriz de frecuencia por municipio y comuna
+        location_counts = df_clean.groupby(['MUNICIPIO', 'COMUNA']).size().reset_index(name='ACCIDENTES')
+        
+        # Seleccionar top 15 combinaciones para mejor visualización
+        top_locations = location_counts.nlargest(15, 'ACCIDENTES')
+        
+        # Preparar datos para heatmap
+        pivot_data = top_locations.pivot(index='MUNICIPIO', columns='COMUNA', values='ACCIDENTES').fillna(0)
+        
+        # Configuración de visualización
+        plt.rcParams['font.size'] = 10
+        plt.rcParams['font.weight'] = 'bold'
+        
+        fig, ax = plt.subplots(figsize=(14, 10), facecolor='white')
+        ax.set_facecolor('#F8F9F9')
+        
+        # Paleta de colores secuencial para heatmap
+        heatmap_cmap = sns.color_palette("YlOrRd", as_cmap=True)
+        
+        # Generar heatmap
+        sns.heatmap(
+            pivot_data,
+            annot=True,
+            fmt=".0f",
+            cmap=heatmap_cmap,
+            cbar_kws={
+                'label': 'Cantidad de Accidentes', 
+                'shrink': 0.8,
+                'format': '%.0f'
+            },
+            ax=ax,
+            linewidths=0.5,
+            linecolor='white',
+            annot_kws={
+                'fontsize': 9,
+                'fontweight': 'bold',
+                'color': 'black'
+            }
+        )
+        
+        ax.set_title(
+            'MAPA DE CALOR - CONCENTRACIÓN DE ACCIDENTES POR MUNICIPIO Y COMUNA',
+            fontsize=16, 
+            fontweight='bold', 
+            pad=20, 
+            color='#2C3E50'
+        )
+        ax.set_xlabel('COMUNA', fontsize=12, fontweight='bold', color='#2C3E50', labelpad=12)
+        ax.set_ylabel('MUNICIPIO', fontsize=12, fontweight='bold', color='#2C3E50', labelpad=12)
+        
+        # Mejorar legibilidad de etiquetas
+        plt.xticks(rotation=45, ha='right', fontsize=9, fontweight='bold')
+        plt.yticks(rotation=0, fontsize=9, fontweight='bold')
+        
+        # Ajustar layout
+        plt.tight_layout()
+        save_fig(fig, path)
+        
+        print("Mapa de calor de accidentes generado correctamente")
+        
+    except Exception as e:
+        print(f"Error generando mapa de calor: {e}")
+
+# Agregar llamada a la función en analisis_rapido
+def analisis_rapido(df: pd.DataFrame):
+    """Análisis exploratorio rápido con gráficas"""
+    print("INICIANDO ANÁLISIS EXPLORATORIO ")
+    
+    required_columns = ["GRAVEDAD_ACCIDENTE", "JORNADA", "CLASE", "COMUNA", "MUNICIPIO"]
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    
+    if missing_columns:
+        raise KeyError(f"Columnas faltantes en el dataset: {missing_columns}")
+    
+    try:
+        df_clean = df.copy()
+        
+        for col in required_columns:
+            if col in df_clean.columns:
+                df_clean[col] = (
+                    df_clean[col]
+                    .astype(str)
+                    .replace(['None', 'nan', 'NAN', 'NONE', '', 'Sin Información', 'SIN INFORMACIÓN'], 'DESCONOCIDO')
+                    .str.strip()
+                    .str.upper()
+                )
+        
+        print("Generando gráfica de gravedad mejorada...")
+        gravedad_series = df_clean["GRAVEDAD_ACCIDENTE"].value_counts()
+        format_torta(
+            gravedad_series,
+            "DISTRIBUCIÓN POR GRAVEDAD DE ACCIDENTES",
+            OUT_DIR / "Accidentes_Gravedad.jpg"
+        )
+        
+        print("Generando gráfica de jornadas mejorada...")
+        jornada_series = df_clean["JORNADA"].value_counts()
+        format_barra(
+            jornada_series,
+            "CANTIDAD DE ACCIDENTES POR JORNADA",
+            "Número de Accidentes", 
+            "Franja Horaria",
+            OUT_DIR / "Accidentes_Jornada.jpg"
+        )
+        
+        print("Generando gráfica de clases mejorada...")
+        df_clase = df_clean[~df_clean["CLASE"].str.contains('SIN INFORMACIÓN|DESCONOCIDO', case=False, na=False)]
+        clase_series = df_clase["CLASE"].value_counts().head(10)
+        format_barra(
+            clase_series,
+            "TOP 10 - TIPOS DE ACCIDENTES MÁS FRECUENTES",
+            "Número de Accidentes", 
+            "Tipo de Accidente",
+            OUT_DIR / "Accidentes_Clase.jpg"
+        )
+        
+        print("Generando gráfica de comunas mejorada...")
+        df_comuna = df_clean[~df_clean["COMUNA"].str.contains('SIN INFORMACIÓN|DESCONOCIDO', case=False, na=False)]
+        comuna_series = df_comuna["COMUNA"].value_counts().head(10)
+        format_barra(
+            comuna_series,
+            "TOP 10 - COMUNAS CON MÁS ACCIDENTES",
+            "Número de Accidentes", 
+            "Comuna",
+            OUT_DIR / "Accidentes_Comuna.jpg"
+        )
+        
+        print("Generando mapa de calor de accidentes...")
+        mapa_calor_accidentes(
+            df_clean,
+            OUT_DIR / "Mapa_Calor_Accidentes.jpg"
+        )
+        
+        print(f"Gráficas generadas en: {OUT_DIR}")
+        
+    except Exception as e:
+        print(f"Error en análisis exploratorio: {e}")
+        raise
+
 # =============================================================================
 # ANÁLISIS EXPLORATORIO 
 # =============================================================================
@@ -313,7 +460,7 @@ def analisis_rapido(df: pd.DataFrame):
         raise
 
 # =============================================================================
-# PREPARACIÓN DE DATOS MEJORADA
+# PREPARACIÓN DE DATOS
 # =============================================================================
 
 def preparar_datos(data: pd.DataFrame):
@@ -402,7 +549,7 @@ def preparar_datos(data: pd.DataFrame):
         raise
 
 # =============================================================================
-# MATRIZ DE CONFUSIÓN MEJORADA
+# MATRIZ DE CONFUSIÓN
 # =============================================================================
 
 def matriz_confusion_vibrante(y_test, y_pred, model_name="Modelo"):
@@ -414,8 +561,8 @@ def matriz_confusion_vibrante(y_test, y_pred, model_name="Modelo"):
         plt.rcParams['font.size'] = 10
         plt.rcParams['font.weight'] = 'bold'
         
-        fig, ax = plt.subplots(figsize=(10, 8), facecolor='white')
-        ax.set_facecolor('#F8F9F9')
+        fig, ax = plt.subplots(figsize=(10, 8), facecolor='black')
+        ax.set_facecolor("#000000")
         
         custom_cmap = sns.light_palette(PALETTE_MODEL_1, as_cmap=True, reverse=False)
         
@@ -424,7 +571,7 @@ def matriz_confusion_vibrante(y_test, y_pred, model_name="Modelo"):
             annot=False, 
             fmt='d', 
             cmap=custom_cmap,
-            cbar_kws={'label': 'Cantidad de Casos', 'shrink': 0.75},
+            cbar_kws={'label': '', 'shrink': 0.75},
             ax=ax,
             square=True,
             linewidths=1.5,
@@ -436,28 +583,28 @@ def matriz_confusion_vibrante(y_test, y_pred, model_name="Modelo"):
                 ax.text(
                     j + 0.5, i + 0.3, f'{cm[i, j]:,}', 
                     ha='center', va='center', 
-                    fontweight='bold', fontsize=12, color='white'
+                    fontweight='bold', fontsize=12, color='black'
                 )
                 ax.text(
                     j + 0.5, i + 0.7, f'({cm_percentage[i, j]:.1f}%)', 
                     ha='center', va='center', 
-                    fontweight='bold', fontsize=9, color='white'
+                    fontweight='bold', fontsize=10, color='black'
                 )
         
         class_names = ['SOLO DAÑOS', 'CON HERIDOS']
         ax.set_xticklabels(class_names, fontsize=11, fontweight='bold', color='#2C3E50')
         ax.set_yticklabels(class_names, fontsize=11, fontweight='bold', color='#2C3E50', rotation=0)
         ax.set_xlabel('PREDICCIÓN DEL MODELO', fontsize=12, fontweight='bold', labelpad=15, color='#2C3E50')
-        ax.set_ylabel('VALOR REAL', fontsize=12, fontweight='bold', labelpad=15, color='#2C3E50')
+        ax.set_ylabel('', fontsize=12, fontweight='bold', labelpad=15, color='#2C3E50')
         
         accuracy = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred, zero_division=0)
         recall = recall_score(y_test, y_pred, zero_division=0)
         f1 = f1_score(y_test, y_pred, zero_division=0)
         
-        title = (f'MATRIZ DE CONFUSIÓN - {model_name.upper()}\n'
-                 f'Exactitud: {accuracy:.2%} | Precisión: {precision:.2%} | '
-                 f'Sensibilidad: {recall:.2%} | F1-Score: {f1:.4f}')
+        title = (f'MATRIZ DE CONFUSIÓN - {model_name.upper()}\n')
+                # f'Exactitud: {accuracy:.2%} | Precisión: {precision:.2%} | '
+                # f'Sensibilidad: {recall:.2%} | F1-Score: {f1:.4f}')
         
         ax.set_title(title, fontsize=14, fontweight='bold', pad=20, color='#2C3E50')
         
