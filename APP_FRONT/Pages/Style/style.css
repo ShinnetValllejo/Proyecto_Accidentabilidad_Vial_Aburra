@@ -1,6 +1,8 @@
 /* ============================================================
-   ESTILO GLOBAL DEL DASHBOARD
+   ESTILO GLOBAL DEL DASHBOARD — PORTADA
    ============================================================ */
+
+/* Fondo general de la app */
 .stApp {
     background-color: #FFFFFF;
     font-family: 'Roboto', sans-serif;
@@ -8,31 +10,33 @@
 }
 
 /* ============================================================
-   CONTENEDOR PRINCIPAL — PORTADA
+   CONTENEDOR PRINCIPAL (TÍTULO DE PORTADA)
    ============================================================ */
 .content-container {
     max-width: 1090px;
-    width: 95%;  /* antes 92% */
+    width: 95%;
     min-height: 300px;
-    margin: 6vh auto 0 auto;  /* sigue centrado */
+    margin: 6vh auto 0 auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: flex-end;
+
+    /* Fondo translúcido sobre imagen */
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+
     border-radius: 18px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
     padding: 2.5rem 4rem 2.5rem 1rem;
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-sizing: border-box;
 }
 
-
 /* ============================================================
-   TÍTULO
+   TÍTULO PRINCIPAL
    ============================================================ */
 .title {
     font-family: 'Montserrat', sans-serif;
@@ -45,7 +49,7 @@
 }
 
 /* ============================================================
-   BOTONES — ABAJO Y MÁS A LA DERECHA
+   ZONA DE BOTONES DE NAVEGACIÓN
    ============================================================ */
 .button-area {
     max-width: 1000px;
@@ -57,23 +61,22 @@
     gap: 8px;
     flex-wrap: wrap;
     padding: 0 2rem;
-    box-sizing: border-box;
 }
 
 /* ============================================================
-   ESTILO DE BOTONES
+   BOTONES DE NAVEGACIÓN
    ============================================================ */
 .stButton button {
-    width: 100%;           /* se adapta al contenedor */
-    max-width: 200px;
+    width: 100%;
+    max-width: 230px; /* ampliado para texto largo */
     height: 48px;
     border-radius: 10px;
-    background: #0D47A1;
+    background: #003584;
     color: #fff;
     font-weight: 600;
     font-size: 1rem;
     border: none;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.25);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
     transition: all 0.2s ease;
     margin: 0 !important;
 }
@@ -81,7 +84,7 @@
 .stButton button:hover {
     transform: translateY(-3px);
     background: #1565C0;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 /* ============================================================
@@ -91,7 +94,6 @@
     .content-container {
         padding: 2rem 3rem;
     }
-
     .title {
         font-size: 2.6rem;
     }
@@ -104,18 +106,15 @@
         margin: 5vh auto;
         min-height: auto;
     }
-
     .title {
         font-size: 2rem;
         text-align: center;
         margin: 0 1rem;
     }
-
     .button-area {
         justify-content: center;
         padding: 0 1rem;
     }
-
     .stButton button {
         max-width: 180px;
         font-size: 0.9rem;
@@ -126,7 +125,6 @@
     .title {
         font-size: 1.6rem;
     }
-
     .stButton button {
         max-width: 100%;
         font-size: 0.85rem;
@@ -134,7 +132,7 @@
 }
 
 /* ============================================================
-   CONTENEDOR GLOBAL DEL DASHBOARD
+   CONTENEDOR GLOBAL DEL DASHBOARD (GENÉRICO)
    ============================================================ */
 .dashboard-container {
     background-color: rgba(255, 255, 255, 0.95);

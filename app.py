@@ -22,18 +22,6 @@ st.set_page_config(
     page_icon="🚧"
 )
 
-# Ocultar la navegación lateral de Streamlit
-st.markdown(
-    """
-    <style>
-        [data-testid="stSidebarNav"] {
-            display: none;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 # ======================================================
 # FUNCIÓN DE CARGA DE CSS
 # ======================================================

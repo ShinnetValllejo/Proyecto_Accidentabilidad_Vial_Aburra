@@ -1,21 +1,39 @@
 # ==========================================================
-# Indicadores Generales - Configuración y Carga de Datos
+# MÓDULO: Indicadores Generales
 # ==========================================================
+
 import streamlit as st
 import pandas as pd
 from pathlib import Path
 from sqlalchemy import create_engine
+import base64
 
 # ==========================================================
-# FUNCIÓN PARA ENCONTRAR LA RAÍZ DEL PROYECTO
+# FUNCIONES DE UTILIDAD
 # ==========================================================
+
 def find_project_root(marker: str = '.project_root') -> Path:
+    """Busca la raíz del proyecto a partir de un marcador."""
     current_dir = Path(__file__).resolve().parent
     while current_dir != current_dir.parent:
         if (current_dir / marker).exists():
             return current_dir
         current_dir = current_dir.parent
-    raise FileNotFoundError(f"No se encontró '{marker}' en el árbol de carpetas.")
+    raise FileNotFoundError(f"No se encontró el marcador '{marker}' en el árbol de carpetas.")
+
+def get_base64_of_image(img_path: Path) -> str:
+    """Convierte una imagen a base64 para su uso como fondo."""
+    with open(img_path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+def load_css(file_name: str):
+    """Carga y aplica un archivo CSS externo."""
+    css_path = STYLE_DIR / file_name
+    if css_path.is_file():
+        with open(css_path, encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    else:
+        st.warning(f"No se encontró el archivo CSS: {file_name}")
 
 # ==========================================================
 # CONFIGURACIÓN DE RUTAS
@@ -23,6 +41,7 @@ def find_project_root(marker: str = '.project_root') -> Path:
 PROJECT_ROOT = find_project_root()
 APP_DIR = PROJECT_ROOT / "APP_FRONT"
 STYLE_DIR = APP_DIR / "Pages" / "Style"
+IMG_PATH = APP_DIR / "Static" / "FondoVistas.png"
 DB_PATH = PROJECT_ROOT / "DATASETS" / "Destino" / "Proyecto_Accidentalidad_Vial_Antioquia.db"
 
 # ==========================================================
@@ -30,6 +49,7 @@ DB_PATH = PROJECT_ROOT / "DATASETS" / "Destino" / "Proyecto_Accidentalidad_Vial_
 # ==========================================================
 @st.cache_data
 def load_data():
+    """Carga los datos de accidentalidad desde la base de datos."""
     engine = create_engine(f"sqlite:///{DB_PATH}")
     df = pd.read_sql("SELECT * FROM Accidentalidad_Vial_Antioquia", engine)
     df.columns = [col.strip().upper() for col in df.columns]
@@ -38,30 +58,45 @@ def load_data():
 df = load_data()
 
 # ==========================================================
-# CARGA DE ESTILOS
-# ==========================================================
-def load_css(file_name: str):
-    css_path = STYLE_DIR / file_name
-    if css_path.is_file():
-        with open(css_path, encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    else:
-        st.warning(f"No se encontró el archivo CSS: {css_path}")
-
-# ==========================================================
-# FUNCIÓN PRINCIPAL
+# FUNCIÓN PRINCIPAL DE LA VISTA
 # ==========================================================
 def mostrar_indicadores():
+    """Renderiza la vista de Indicadores Generales en Streamlit."""
+
+    # Fondo con imagen
+    if IMG_PATH.exists():
+        bg_base64 = get_base64_of_image(IMG_PATH)
+        st.markdown(
+            f"""
+            <style>
+            .stApp {{
+                background-image: url("data:image/png;base64,{bg_base64}");
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+                background-position: center;
+                background-size: cover;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.warning(f"No se encontró la imagen de fondo: {IMG_PATH}")
+
+    # Estilos CSS
     load_css("indicadores.css")
 
+    # Espaciado superior mínimo
     st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
 
-    # Barra de navegación
+    # ==========================================================
+    # BARRA DE NAVEGACIÓN
+    # ==========================================================
     st.markdown("<div class='nav-bar'>", unsafe_allow_html=True)
     col_home, col_indic, col_gravedad, col_clasif, col_pred = st.columns(5, gap="small")
 
     with col_home:
-        if st.button("🏠 Home"):
+        if st.button("🏠 INICIO"):
             st.session_state["pagina"] = "inicio"
             st.rerun()
     with col_indic:
@@ -80,78 +115,60 @@ def mostrar_indicadores():
             st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # Separador visual
     st.markdown("<div class='nav-separator'></div>", unsafe_allow_html=True)
-    st.markdown("<h1 class='dashboard-title'>🛣️ Indicadores Generales — Accidentabilidad Vial</h1>", unsafe_allow_html=True)
 
-    # Filtros
-    with st.sidebar:
-        st.header("Filtros")
-        anios = sorted(df['AÑO'].dropna().unique())
-        anio_sel = st.selectbox("AÑO", ["Todos"] + list(anios))
+    # ==========================================================
+    # TÍTULOS
+    # ==========================================================
+    st.markdown(
+        """
+        <div class="title-block">
+            <h1 class="dashboard-title">🛣️ Indicadores Generales</h1>
+            <h2 class="dashboard-subtitle">
+                Accidentabilidad vial en el Valle de Aburrá (2015–2019)
+            </h2>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-        municipios = sorted(df['MUNICIPIO'].dropna().unique())
-        if anio_sel != "Todos":
-            municipios = sorted(df[df['AÑO'] == anio_sel]['MUNICIPIO'].dropna().unique())
-        municipio_sel = st.selectbox("MUNICIPIO", ["Todos"] + municipios)
-
-        comunas = sorted(df['COMUNA'].dropna().unique())
-        if municipio_sel != "Todos":
-            comunas = sorted(df[df['MUNICIPIO'] == municipio_sel]['COMUNA'].dropna().unique())
-        comuna_sel = st.selectbox("COMUNA", ["Todas"] + comunas)
-
-        barrios = sorted(df['BARRIO'].dropna().unique())
-        if comuna_sel != "Todas":
-            barrios = sorted(df[df['COMUNA'] == comuna_sel]['BARRIO'].dropna().unique())
-        barrio_sel = st.selectbox("BARRIO", ["Todos"] + barrios)
-
-        clases = sorted(df['CLASE'].dropna().unique())
-        if barrio_sel != "Todos":
-            clases = sorted(df[df['BARRIO'] == barrio_sel]['CLASE'].dropna().unique())
-        clase_sel = st.selectbox("CLASE", ["Todas"] + clases)
-
-    # Filtrado
-    df_filtrado = df.copy()
-    if anio_sel != "Todos":
-        df_filtrado = df_filtrado[df_filtrado['AÑO'] == anio_sel]
-    if municipio_sel != "Todos":
-        df_filtrado = df_filtrado[df_filtrado['MUNICIPIO'] == municipio_sel]
-    if comuna_sel != "Todas":
-        df_filtrado = df_filtrado[df_filtrado['COMUNA'] == comuna_sel]
-    if barrio_sel != "Todos":
-        df_filtrado = df_filtrado[df_filtrado['BARRIO'] == barrio_sel]
-    if clase_sel != "Todas":
-        df_filtrado = df_filtrado[df_filtrado['CLASE'] == clase_sel]
-
-    st.write(f"Registros filtrados: {len(df_filtrado)}")
-
-    # Tarjetas resumen
+    # ==========================================================
+    # TARJETAS DE MÉTRICAS
+    # ==========================================================
     col1, col2, col3, col4 = st.columns(4, gap="small")
-    totales = df_filtrado.groupby("GRAVEDAD_ACCIDENTE").size().to_dict()
-    tasa_muertos = totales.get("MUERTOS", 0)
-    tasa_heridos = totales.get("HERIDOS", 0)
-    tasa_danos = totales.get("DAÑOS", 0)
-    total_accidentes = len(df_filtrado)
+    totales = df.groupby("GRAVEDAD_ACCIDENTE").size().to_dict()
 
-    for col, color, title, value in zip(
-        [col1, col2, col3, col4],
-        ["#FF6B6B", "#FFD93D", "#6BCB77", "#4D96FF"],
-        ["Tasa Muertos", "Tasa Heridos", "Tasa Daños", "Total Accidentes"],
-        [tasa_muertos, tasa_heridos, tasa_danos, total_accidentes]
-    ):
+    tarjetas = [
+        ("#FF6B6B", "Tasa Muertos", totales.get("MUERTOS", 0)),
+        ("#FFD93D", "Tasa Heridos", totales.get("HERIDOS", 0)),
+        ("#6BCB77", "Tasa Daños", totales.get("DAÑOS", 0)),
+        ("#4D96FF", "Total Accidentes", len(df))
+    ]
+
+    for col, (color, title, value) in zip([col1, col2, col3, col4], tarjetas):
         col.markdown(
             f"""
             <div class='metric-card' style='background-color:{color};'>
                 <div class='metric-title'>{title}</div>
                 <div class='metric-value'>{value}</div>
             </div>
-            """, unsafe_allow_html=True
+            """,
+            unsafe_allow_html=True
         )
 
-    # Gráfica
-    if not df_filtrado.empty:
+    # ==========================================================
+    # GRÁFICA DE TENDENCIA
+    # ==========================================================
+    if not df.empty:
         st.markdown("<h2>📊 Evolución de Accidentes por Gravedad</h2>", unsafe_allow_html=True)
-        pivot_df = df_filtrado.groupby(['AÑO', 'GRAVEDAD_ACCIDENTE']).size().reset_index(name='TOTAL')
-        pivot_df = pivot_df.pivot(index='AÑO', columns='GRAVEDAD_ACCIDENTE', values='TOTAL').fillna(0)
+        pivot_df = (
+            df.groupby(['AÑO', 'GRAVEDAD_ACCIDENTE'])
+            .size()
+            .reset_index(name='TOTAL')
+            .pivot(index='AÑO', columns='GRAVEDAD_ACCIDENTE', values='TOTAL')
+            .fillna(0)
+        )
         st.line_chart(pivot_df)
     else:
-        st.warning("No hay registros para los filtros seleccionados.")
+        st.warning("No hay registros disponibles.")
