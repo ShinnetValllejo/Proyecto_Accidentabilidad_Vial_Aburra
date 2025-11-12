@@ -1,4 +1,3 @@
-
 # =============================================================================
 # ANÁLISIS PREDICTIVO DE ACCIDENTALIDAD VIAL - VERSIÓN OPTIMIZADA
 # =============================================================================
@@ -59,6 +58,8 @@ DB_PATH = BASE_DIR / "DATASETS" / "Destino"/ "Proyecto_Accidentalidad_Vial_Antio
 OUT_DIR = BASE_DIR / "ETL_MODULES" / "Transform" / "Graficas_Salida"
 MODEL_DIR = BASE_DIR / "ETL_MODULES" / "Transform" / "Modelo_Predict"
 
+engine = create_engine(f"sqlite:///{DB_PATH}")
+df = pd.read_sql("SELECT * FROM Accidentalidad_Vial_Antioquia", engine)
 # =============================================================================
 # FUNCIONES UTILITARIAS 
 # =============================================================================
@@ -303,9 +304,12 @@ def mapa_calor_accidentes(df: pd.DataFrame, path: Path):
         
         # Ajustar layout
         plt.tight_layout()
-        save_fig(fig, path)
+
+        # ✅ CORRECCIÓN: Guardar la figura en OUT_DIR en lugar de usar path directamente
+        output_path = OUT_DIR / "mapa_calor_accidentes.png"
+        save_fig(fig, output_path)
         
-        print("Mapa de calor de accidentes generado correctamente")
+        print(f"Mapa de calor de accidentes generado correctamente en: {output_path}")
         
     except Exception as e:
         print(f"Error generando mapa de calor: {e}")
@@ -452,8 +456,13 @@ def analisis_rapido(df: pd.DataFrame):
             "Comuna",
             OUT_DIR / "Accidentes_Comuna.jpg"
         )
+        print("Generando mapa de calor de accidentes...")
+        mapa_calor_accidentes(
+            df_clean,
+            OUT_DIR / "Mapa_Calor_Accidentes.jpg"
+        )
         
-        print(f"Gráficas  generadas en: {OUT_DIR}")
+        print(f"Gráficas generadas en: {OUT_DIR}")   
         
     except Exception as e:
         print(f"Error en análisis exploratorio : {e}")
@@ -547,7 +556,57 @@ def preparar_datos(data: pd.DataFrame):
     except Exception as e:
         print(f"Error en preparación de datos: {e}")
         raise
+# =============================================================================
+# MAPAS DE CALOR
+# =============================================================================
+# Pivot table: filas = hora, columnas = día de la semana, valores = número de accidentes
+df_heatmap = df.dropna(subset=['hora_redondeada']).pivot_table(
+    index='hora_redondeada', 
+    columns='NOM_DIA_SEMANA', 
+    values='GRAVEDAD_ACCIDENTE', 
+    aggfunc='count',
+    fill_value=0
+)
 
+# ✅ ELIMINAR LA FILA "NaT" directamente del índice
+df_heatmap = df_heatmap.drop('NAT', errors='ignore')
+
+dias_orden = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]
+columnas_disponibles = [dia for dia in dias_orden if dia in df_heatmap.columns]
+df_heatmap = df_heatmap[columnas_disponibles]
+
+plt.figure(figsize=(12,8))
+sns.heatmap(df_heatmap, annot=True, fmt="d", cmap="YlOrRd")
+plt.title("Mapa de Calor de Accidentes por Hora y Día de la Semana", fontsize=14)
+plt.xlabel("Día de la Semana")
+plt.ylabel("")
+plt.tight_layout()
+plt.savefig(OUT_DIR / "HORA_DÍASEMANA.jpg", dpi=300, format='jpg', bbox_inches='tight')
+# Filtrar valores no deseados ANTES del pivot
+df_filtrado = df[
+    (~df["COMUNA"].str.upper().isin(["SIN INFORMACIÓN", "NONE", "IN", "NAN", "DESCONOCIDO"])) &
+    (df["COMUNA"].notna())
+].copy()
+
+# Crear pivot table
+df_pivot = df_filtrado.pivot_table(
+    index="COMUNA",      # filas
+    columns="JORNADA",   # columnas
+    values="GRAVEDAD_ACCIDENTE",  # valores para llenar
+    aggfunc="count",     # contar accidentes
+    fill_value=0
+)
+
+# Visualización
+plt.figure(figsize=(12, 8))
+sns.heatmap(df_pivot, annot=True, fmt="d", cmap="YlOrRd", 
+            linewidths=0.5, linecolor='white')
+plt.title("Mapa de Calor de Accidentes por Gravedad y Comuna", fontsize=14, fontweight='bold')
+plt.xlabel("Jornada", fontsize=12, fontweight='bold')
+plt.ylabel("", fontsize=12, fontweight='bold')
+plt.xticks(rotation=0)
+plt.tight_layout()
+plt.savefig(OUT_DIR / "GRAVEDAD_COMUNA.jpg", dpi=300, format='jpg', bbox_inches='tight')
 # =============================================================================
 # MATRIZ DE CONFUSIÓN
 # =============================================================================
@@ -1218,3 +1277,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
