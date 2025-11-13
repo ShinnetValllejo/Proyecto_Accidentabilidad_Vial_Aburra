@@ -421,7 +421,7 @@ def grafica_tendencia_gravedad(df: pd.DataFrame, path: Path):
             )
         
         ax.set_title(
-            'TENDENCIA TEMPORAL DE ACCIDENTES POR GRAVEDAD', 
+            'TENDENCIA DE ACCIDENTES POR GRAVEDAD', 
             fontsize=16, 
             fontweight='bold',
             pad=20,
