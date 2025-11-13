@@ -5,6 +5,7 @@
 import streamlit as st
 import pandas as pd
 import base64
+from PIL import Image
 from pathlib import Path
 from sqlalchemy import create_engine
 from APP_FRONT.nav import generar_barra_navegacion
@@ -44,6 +45,9 @@ APP_DIR = PROJECT_ROOT / "APP_FRONT"
 STYLE_DIR = APP_DIR / "Pages" / "Style"
 IMG_PATH = APP_DIR / "Static" / "FondoVistas.png"
 DB_PATH = PROJECT_ROOT / "DATASETS" / "Destino" / "Proyecto_Accidentalidad_Vial_Antioquia.db"
+# --- Nueva ruta para las gráficas ---
+GRAFICAS_DIR = PROJECT_ROOT / "ETL_MODULES" / "Transform" / "Graficas_Salida"
+
 
 # ==========================================================
 # CARGA DE DATOS
@@ -132,18 +136,68 @@ def mostrar_indicadores():
             unsafe_allow_html=True
         )
 
+    # Espaciador
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
     # ==========================================================
-    # GRÁFICA DE TENDENCIA
+    # VISUALIZACIÓN DE GRÁFICAS
     # ==========================================================
-    if not df.empty:
-        st.markdown("<h2>📊 Evolución de Accidentes por Gravedad</h2>", unsafe_allow_html=True)
-        pivot_df = (
-            df.groupby(['AÑO', 'GRAVEDAD_ACCIDENTE'])
-            .size()
-            .reset_index(name='TOTAL')
-            .pivot(index='AÑO', columns='GRAVEDAD_ACCIDENTE', values='TOTAL')
-            .fillna(0)
-        )
-        st.line_chart(pivot_df)
-    else:
-        st.warning("No hay registros disponibles.")
+
+    # --- Fila 1 de Gráficas ---
+    col_g1, col_g2 = st.columns(2, gap="medium")
+
+    with col_g1:
+        st.markdown("<h3 class='graph-title'>Accidentes por Gravedad</h3>", unsafe_allow_html=True)
+        img_gravedad_path = GRAFICAS_DIR / "Accidentes_Gravedad.jpg"
+        if img_gravedad_path.exists():
+            st.image(str(img_gravedad_path), use_container_width=True)
+        else:
+            st.warning(f"Gráfica no encontrada: {img_gravedad_path.name}")
+
+    with col_g2:
+        st.markdown("<h3 class='graph-title'>Accidentes por Jornada</h3>", unsafe_allow_html=True)
+        img_comuna_path = GRAFICAS_DIR / "Accidentes_Jornada.jpg"
+        if img_comuna_path.exists():
+            st.image(str(img_comuna_path), use_container_width=True)
+        else:
+            st.warning(f"Gráfica no encontrada: {img_comuna_path.name}")
+
+    # Espaciador
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
+    # --- Fila 2 de Gráficas ---
+    col_g3, col_g4 = st.columns(2, gap="medium")
+
+    with col_g3:
+        st.markdown("<h3 class='graph-title'>Accidentes por Comuna</h3>", unsafe_allow_html=True)
+        img_jornada_path = GRAFICAS_DIR / "Accidentes_Jornada.jpg"
+        if img_jornada_path.exists():
+            st.image(str(img_jornada_path), use_container_width=True)
+        else:
+            st.warning(f"Gráfica no encontrada: {img_jornada_path.name}")
+
+    with col_g4:
+        st.markdown("<h3 class='graph-title'>Accidentes por Clase</h3>", unsafe_allow_html=True)
+        img_evolucion_path = GRAFICAS_DIR / "Accidentes_Clase.jpg"
+        if img_evolucion_path.exists():
+            st.image(str(img_evolucion_path), use_container_width=True)
+        else:
+            st.warning(f"Gráfica no encontrada: {img_evolucion_path.name}")
+
+    # --- Nueva Fila para Accidentes por Clase ---
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True) # Espaciador
+    st.markdown("<h3 class='graph-title'>Evolución Temporal por Gravedad</h3>", unsafe_allow_html=True)
+    _ , col_centro, _ = st.columns([0.5, 2, 0.5]) # Proporción 1:2:1
+    
+    with col_centro:
+        img_clase_path = GRAFICAS_DIR / "Evolucion_Temporal_Gravedad.jpg"
+        if img_clase_path.exists():
+            st.image(str(img_clase_path), use_container_width=True)
+        else:
+            st.warning(f"Gráfica no encontrada: {img_clase_path.name}")
+
+
+
+# Esta línea es necesaria si ejecutas este archivo directamente para pruebas
+if __name__ == "__main__":
+    mostrar_indicadores()

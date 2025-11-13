@@ -30,7 +30,7 @@ if not DB_PATH.exists():
 engine = create_engine(f"sqlite:///{DB_PATH}")
 
 # Consultar estructura de la tabla
-df_info = pd.read_sql("SELECT BARRIO, COMUNA, DISEÑO FROM Accidentalidad_Vial_Antioquia WHERE COD_MUNICIPIO = 79 AND FECHA = '03/01/2015' AND GRAVEDAD_ACCIDENTE = 'HERIDOS' AND hora_redondeada = '01:00:00'  ;", con=engine)
+df_info = pd.read_sql("PRAGMA table_info(Accidentalidad_Vial_Antioquia);", con=engine)
 
 print(df_info)
 

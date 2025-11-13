@@ -109,66 +109,92 @@ def paleta_presentacion(n: int):
     else:
         return sns.color_palette("husl", n_colors=n)
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from pathlib import Path
+
+# Función auxiliar para decidir color del texto según fondo
+def txt_color(rgb):
+    """
+    Determina el color del texto (blanco o negro) según el color de fondo.
+    rgb: tupla con 3 valores (r, g, b), cada uno entre 0 y 1
+    """
+    r, g, b = rgb
+    luminance = 0.299*r*255 + 0.587*g*255 + 0.114*b*255
+    return 'black' if luminance > 186 else 'white'
+
+# Función para formatear números grandes
+def num_fmt(val):
+    return f"{int(val):,}"
+
 def format_torta(series: pd.Series, title: str, path: Path):
-    """Genera gráfica de torta"""
+    """Genera gráfica de torta con etiquetas personalizadas estilo 'format_barra'"""
     try:
         series = series.copy()
         mask = (~series.index.isna()) & (series.index.notna()) & (series.notna())
         series = series[mask]
-        
         series = series[~series.index.str.contains('DESCONOCIDO|SIN INFORMACIÓN|NAN', case=False, na=False)]
         
-        if series.empty or len(series) == 0:
+        if series.empty:
             print(f"No hay datos válidos para: {title}")
             return
-            
+        
         plt.rcParams['font.size'] = 12
         plt.rcParams['font.weight'] = 'bold'
         
+        # Paleta de colores personalizada (definir tu función)
         colors = paleta_presentacion(len(series))
-        fig, ax = plt.subplots(figsize=(12, 9), facecolor='white')
         
+        fig, ax = plt.subplots(figsize=(12, 9), facecolor='white')
         total = series.sum()
         
-        def autopct_func(pct):
-            absolute = int(round(pct * total / 100.0))
-            return f'{absolute:,}'
-        
+        # Ajuste de separación de porciones importantes
         explode = [0.03] * len(series)
         if 'MUERTOS' in series.index:
             idx_muertos = list(series.index).index('MUERTOS')
             explode[idx_muertos] = 0.15
         
-        wedges, texts, autotexts = ax.pie(
-            series.values, 
+        wedges, _ = ax.pie(
+            series.values,
             labels=None,
-            autopct=autopct_func,
             startangle=10,
             colors=colors,
-            textprops={'fontsize': 12, 'fontweight': 'bold', 'color': 'white'},
             explode=explode,
             shadow=False,
             wedgeprops={'edgecolor': 'white', 'linewidth': 1.5}
         )
         
-        for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontweight('bold')
-            autotext.set_fontsize(12)
-            autotext.set_bbox(dict(boxstyle="round,pad=0.2", facecolor='black', alpha=0.7, edgecolor='none'))
+        # Etiquetas personalizadas (valor y porcentaje) como en format_barra
+        for wedge, val in zip(wedges, series.values):
+            ang = (wedge.theta2 + wedge.theta1) / 2  # ángulo medio de la porción
+            x = 0.7 * np.cos(np.deg2rad(ang))
+            y = 0.7 * np.sin(np.deg2rad(ang))
+            pct = (val / total) * 100
+            rel = val / series.max()
+            color = txt_color(wedge.get_facecolor()[:3]) if rel >= 0.12 else 'black'
+            ha = 'center' if rel >= 0.12 else 'left'
+            va = 'center'
             
-        legend_labels = [f'{label} ({value:,})' for label, value in zip(series.index, series.values)]
+            ax.text(x, y, f"{num_fmt(val)} ({pct:.1f}%)",
+                    ha=ha, va=va,
+                    fontweight='bold', fontsize=12, color=color)
+        
+        # Leyenda con valores absolutos
+        legend_labels = [f'{label} ({num_fmt(value)})' for label, value in zip(series.index, series.values)]
         ax.legend(wedges, legend_labels, title="Categorías", 
-                 loc="center left", bbox_to_anchor=(1.1, 0, 0.5, 1),
-                 fontsize=9, title_fontsize=10)
+                  loc="center left", bbox_to_anchor=(1.1, 0, 0.5, 1),
+                  fontsize=9, title_fontsize=10)
         
         ax.set_title(title, fontsize=16, fontweight="bold", pad=25, color='#2C3E50')
-        
         plt.tight_layout()
-        save_fig(fig, path)
         
+        save_fig(fig, path)  # tu función de guardado
+        plt.close(fig)
+    
     except Exception as e:
         print(f"Error en gráfica de torta '{title}': {e}")
+
 
 def format_barra(series: pd.Series, title: str, xlabel: str, ylabel: str, path: Path):
     """Genera gráfica de barras horizontal con mejor legibilidad"""
@@ -314,10 +340,195 @@ def mapa_calor_accidentes(df: pd.DataFrame, path: Path):
     except Exception as e:
         print(f"Error generando mapa de calor: {e}")
 
-# Agregar llamada a la función en analisis_rapido
+def grafica_tendencia_gravedad(df: pd.DataFrame, path: Path):
+    """Genera gráfica de tendencia temporal de accidentes por gravedad"""
+    try:
+        df_clean = df.copy()
+        
+        # ✅ CREAR AÑO_MES si no existe
+        if 'AÑO_MES' not in df_clean.columns:
+            if 'NUM_AÑO' in df_clean.columns and 'NUM_MES' in df_clean.columns:
+                df_clean['AÑO_MES'] = (
+                    df_clean['NUM_AÑO'].astype(str) + '-' + 
+                    df_clean['NUM_MES'].astype(str).str.zfill(2)
+                )
+            elif 'FECHA_ACCIDENTE' in df_clean.columns:
+                df_clean['AÑO_MES'] = pd.to_datetime(
+                    df_clean['FECHA_ACCIDENTE'], errors='coerce'
+                ).dt.to_period('M').astype(str)
+            else:
+                print("Error: No se puede crear AÑO_MES. Columnas necesarias no encontradas")
+                return
+        
+        df_clean['AÑO_MES'] = df_clean['AÑO_MES'].astype(str)
+        df_clean['GRAVEDAD_ACCIDENTE'] = (
+            df_clean['GRAVEDAD_ACCIDENTE']
+            .str.upper()
+            .fillna('DESCONOCIDO')
+        )
+        
+        # Filtrar valores no deseados
+        df_clean = df_clean[
+            ~df_clean['GRAVEDAD_ACCIDENTE'].str.contains(
+                'DESCONOCIDO|SIN INFORMACIÓN|NAN', 
+                case=False, 
+                na=False
+            )
+        ]
+        
+        if df_clean.empty:
+            print("No hay datos válidos para grafica_tendencia_gravedad")
+            return
+        
+        # Agrupar y pivotar
+        df_grouped = (
+            df_clean
+            .groupby(['AÑO_MES', 'GRAVEDAD_ACCIDENTE'])
+            .size()
+            .reset_index(name='TOTAL')
+        )
+        
+        df_pivot = (
+            df_grouped
+            .pivot(index='AÑO_MES', columns='GRAVEDAD_ACCIDENTE', values='TOTAL')
+            .fillna(0)
+        )
+        
+        # Ordenar por fecha
+        df_pivot = df_pivot.sort_index()
+        
+        # Crear gráfica
+        plt.rcParams['font.size'] = 10
+        plt.rcParams['font.weight'] = 'bold'
+        
+        fig, ax = plt.subplots(figsize=(14, 7), facecolor='white')
+        ax.set_facecolor('#F8F9F9')
+        
+        # Paleta de colores para las líneas
+        colors = paleta_presentacion(len(df_pivot.columns))
+        
+        # Graficar cada serie
+        for i, col in enumerate(df_pivot.columns):
+            ax.plot(
+                df_pivot.index, 
+                df_pivot[col], 
+                marker='o', 
+                linewidth=2.5,
+                label=col,
+                color=colors[i],
+                markersize=6,
+                alpha=0.85
+            )
+        
+        ax.set_title(
+            'TENDENCIA TEMPORAL DE ACCIDENTES POR GRAVEDAD', 
+            fontsize=16, 
+            fontweight='bold',
+            pad=20,
+            color='#2C3E50'
+        )
+        ax.set_xlabel('PERIODO (AÑO-MES)', fontsize=12, fontweight='bold', color='#2C3E50')
+        ax.set_ylabel('NÚMERO DE ACCIDENTES', fontsize=12, fontweight='bold', color='#2C3E50')
+        
+        ax.legend(
+            title='Gravedad del Accidente',
+            loc='best',
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            fontsize=9
+        )
+        
+        ax.grid(True, linestyle='--', alpha=0.5, color='#BDC3C7')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.xticks(rotation=45, ha='right', fontsize=9)
+        plt.tight_layout()
+        
+        # ✅ ASEGURAR QUE EL DIRECTORIO EXISTE
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        
+        # ✅ GUARDAR
+        output_path = path if path else OUT_DIR / "Evolucion_Temporal_Gravedad.jpg"
+        save_fig(fig, output_path)
+        
+        print(f"✓ grafica_tendencia_gravedad generada en: {output_path}")
+        
+    except Exception as e:
+        print(f"Error en grafica_tendencia_gravedad: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+def generar_mapas_calor_adicionales(df: pd.DataFrame):
+    """Genera mapas de calor adicionales de hora/día y comuna/jornada"""
+    print("Generando mapas de calor adicionales...")
+    
+    try:
+        # ===== MAPA DE CALOR: HORA x DÍA DE SEMANA =====
+        if 'hora_redondeada' in df.columns and 'NOM_DIA_SEMANA' in df.columns:
+            df_heatmap = df.dropna(subset=['hora_redondeada']).pivot_table(
+                index='hora_redondeada', 
+                columns='NOM_DIA_SEMANA', 
+                values='GRAVEDAD_ACCIDENTE', 
+                aggfunc='count',
+                fill_value=0
+            )
+            
+            df_heatmap = df_heatmap.drop('NAT', errors='ignore')
+            
+            dias_orden = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]
+            columnas_disponibles = [dia for dia in dias_orden if dia in df_heatmap.columns]
+            df_heatmap = df_heatmap[columnas_disponibles]
+            
+            plt.figure(figsize=(12, 8))
+            sns.heatmap(df_heatmap, annot=True, fmt="d", cmap="YlOrRd")
+            plt.title("Mapa de Calor de Accidentes por Hora y Día de la Semana", fontsize=14)
+            plt.xlabel("Día de la Semana")
+            plt.ylabel("Hora")
+            plt.tight_layout()
+            plt.savefig(OUT_DIR / "HORA_DIASEMANA.jpg", dpi=300, format='jpg', bbox_inches='tight')
+            plt.close()
+            print("✓ Mapa de calor Hora x Día generado")
+        
+        # ===== MAPA DE CALOR: COMUNA x JORNADA =====
+        df_filtrado = df[
+            (~df["COMUNA"].str.upper().isin(["SIN INFORMACIÓN", "NONE", "IN", "NAN", "DESCONOCIDO"])) &
+            (df["COMUNA"].notna())
+        ].copy()
+        
+        if not df_filtrado.empty:
+            df_pivot = df_filtrado.pivot_table(
+                index="COMUNA",
+                columns="JORNADA",
+                values="GRAVEDAD_ACCIDENTE",
+                aggfunc="count",
+                fill_value=0
+            )
+            
+            plt.figure(figsize=(12, 8))
+            sns.heatmap(df_pivot, annot=True, fmt="d", cmap="YlOrRd", 
+                        linewidths=0.5, linecolor='white')
+            plt.title("Mapa de Calor de Accidentes por Comuna y Jornada", fontsize=14, fontweight='bold')
+            plt.xlabel("Jornada", fontsize=12, fontweight='bold')
+            plt.ylabel("Comuna", fontsize=12, fontweight='bold')
+            plt.xticks(rotation=0)
+            plt.tight_layout()
+            plt.savefig(OUT_DIR / "GRAVEDAD_COMUNA.jpg", dpi=300, format='jpg', bbox_inches='tight')
+            plt.close()
+            print("✓ Mapa de calor Comuna x Jornada generado")
+            
+    except Exception as e:
+        print(f"Error generando mapas de calor adicionales: {e}")
+
+
+# =============================================================================
+# ✅ UNA SOLA DEFINICIÓN DE analisis_rapido
+# =============================================================================
 def analisis_rapido(df: pd.DataFrame):
     """Análisis exploratorio rápido con gráficas"""
-    print("INICIANDO ANÁLISIS EXPLORATORIO ")
+    print("INICIANDO ANÁLISIS EXPLORATORIO")
     
     required_columns = ["GRAVEDAD_ACCIDENTE", "JORNADA", "CLASE", "COMUNA", "MUNICIPIO"]
     missing_columns = [col for col in required_columns if col not in df.columns]
@@ -338,7 +549,7 @@ def analisis_rapido(df: pd.DataFrame):
                     .str.upper()
                 )
         
-        print("Generando gráfica de gravedad mejorada...")
+        print("Generando gráfica de gravedad...")
         gravedad_series = df_clean["GRAVEDAD_ACCIDENTE"].value_counts()
         format_torta(
             gravedad_series,
@@ -346,7 +557,7 @@ def analisis_rapido(df: pd.DataFrame):
             OUT_DIR / "Accidentes_Gravedad.jpg"
         )
         
-        print("Generando gráfica de jornadas mejorada...")
+        print("Generando gráfica de jornadas...")
         jornada_series = df_clean["JORNADA"].value_counts()
         format_barra(
             jornada_series,
@@ -356,7 +567,7 @@ def analisis_rapido(df: pd.DataFrame):
             OUT_DIR / "Accidentes_Jornada.jpg"
         )
         
-        print("Generando gráfica de clases mejorada...")
+        print("Generando gráfica de clases...")
         df_clase = df_clean[~df_clean["CLASE"].str.contains('SIN INFORMACIÓN|DESCONOCIDO', case=False, na=False)]
         clase_series = df_clase["CLASE"].value_counts().head(10)
         format_barra(
@@ -367,7 +578,7 @@ def analisis_rapido(df: pd.DataFrame):
             OUT_DIR / "Accidentes_Clase.jpg"
         )
         
-        print("Generando gráfica de comunas mejorada...")
+        print("Generando gráfica de comunas...")
         df_comuna = df_clean[~df_clean["COMUNA"].str.contains('SIN INFORMACIÓN|DESCONOCIDO', case=False, na=False)]
         comuna_series = df_comuna["COMUNA"].value_counts().head(10)
         format_barra(
@@ -383,89 +594,20 @@ def analisis_rapido(df: pd.DataFrame):
             df_clean,
             OUT_DIR / "Mapa_Calor_Accidentes.jpg"
         )
+
+        print("Generando gráfica de tendencia por gravedad...")
+        grafica_tendencia_gravedad(
+            df_clean,
+            OUT_DIR / "Evolucion_Temporal_Gravedad.jpg"
+        )
         
-        print(f"Gráficas generadas en: {OUT_DIR}")
+        print("Generando mapas de calor adicionales...")
+        generar_mapas_calor_adicionales(df)
+        
+        print(f"✓ Todas las gráficas generadas en: {OUT_DIR}")
         
     except Exception as e:
         print(f"Error en análisis exploratorio: {e}")
-        raise
-
-# =============================================================================
-# ANÁLISIS EXPLORATORIO 
-# =============================================================================
-
-def analisis_rapido(df: pd.DataFrame):
-    """Análisis exploratorio rápido con gráficas """
-    print("INICIANDO ANÁLISIS EXPLORATORIO ")
-    
-    required_columns = ["GRAVEDAD_ACCIDENTE", "JORNADA", "CLASE", "COMUNA"]
-    missing_columns = [col for col in required_columns if col not in df.columns]
-    
-    if missing_columns:
-        raise KeyError(f"Columnas faltantes en el dataset: {missing_columns}")
-    
-    try:
-        df_clean = df.copy()
-        
-        for col in required_columns:
-            if col in df_clean.columns:
-                df_clean[col] = (
-                    df_clean[col]
-                    .astype(str)
-                    .replace(['None', 'nan', 'NAN', 'NONE', '', 'Sin Información', 'SIN INFORMACIÓN'], 'DESCONOCIDO')
-                    .str.strip()
-                    .str.upper()
-                )
-        
-        print("Generando gráfica de gravedad mejorada...")
-        gravedad_series = df_clean["GRAVEDAD_ACCIDENTE"].value_counts()
-        format_torta(
-            gravedad_series,
-            "DISTRIBUCIÓN POR GRAVEDAD DE ACCIDENTES",
-            OUT_DIR / "Accidentes_Gravedad.jpg"
-        )
-        
-        print("Generando gráfica de jornadas mejorada...")
-        jornada_series = df_clean["JORNADA"].value_counts()
-        format_barra(
-            jornada_series,
-            "CANTIDAD DE ACCIDENTES POR JORNADA",
-            "Número de Accidentes", 
-            "Franja Horaria",
-            OUT_DIR / "Accidentes_Jornada.jpg"
-        )
-        
-        print("Generando gráfica de clases mejorada...")
-        df_clase = df_clean[~df_clean["CLASE"].str.contains('SIN INFORMACIÓN|DESCONOCIDO', case=False, na=False)]
-        clase_series = df_clase["CLASE"].value_counts().head(10)
-        format_barra(
-            clase_series,
-            "TOP 10 - TIPOS DE ACCIDENTES MÁS FRECUENTES",
-            "Número de Accidentes", 
-            "Tipo de Accidente",
-            OUT_DIR / "Accidentes_Clase.jpg"
-        )
-        
-        print("Generando gráfica de comunas mejorada...")
-        df_comuna = df_clean[~df_clean["COMUNA"].str.contains('SIN INFORMACIÓN|DESCONOCIDO', case=False, na=False)]
-        comuna_series = df_comuna["COMUNA"].value_counts().head(10)
-        format_barra(
-            comuna_series,
-            "TOP 10 - COMUNAS CON MÁS ACCIDENTES",
-            "Número de Accidentes", 
-            "Comuna",
-            OUT_DIR / "Accidentes_Comuna.jpg"
-        )
-        print("Generando mapa de calor de accidentes...")
-        mapa_calor_accidentes(
-            df_clean,
-            OUT_DIR / "Mapa_Calor_Accidentes.jpg"
-        )
-        
-        print(f"Gráficas generadas en: {OUT_DIR}")   
-        
-    except Exception as e:
-        print(f"Error en análisis exploratorio : {e}")
         raise
 
 # =============================================================================
@@ -556,57 +698,7 @@ def preparar_datos(data: pd.DataFrame):
     except Exception as e:
         print(f"Error en preparación de datos: {e}")
         raise
-# =============================================================================
-# MAPAS DE CALOR
-# =============================================================================
-# Pivot table: filas = hora, columnas = día de la semana, valores = número de accidentes
-df_heatmap = df.dropna(subset=['hora_redondeada']).pivot_table(
-    index='hora_redondeada', 
-    columns='NOM_DIA_SEMANA', 
-    values='GRAVEDAD_ACCIDENTE', 
-    aggfunc='count',
-    fill_value=0
-)
 
-# ✅ ELIMINAR LA FILA "NaT" directamente del índice
-df_heatmap = df_heatmap.drop('NAT', errors='ignore')
-
-dias_orden = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]
-columnas_disponibles = [dia for dia in dias_orden if dia in df_heatmap.columns]
-df_heatmap = df_heatmap[columnas_disponibles]
-
-plt.figure(figsize=(12,8))
-sns.heatmap(df_heatmap, annot=True, fmt="d", cmap="YlOrRd")
-plt.title("Mapa de Calor de Accidentes por Hora y Día de la Semana", fontsize=14)
-plt.xlabel("Día de la Semana")
-plt.ylabel("")
-plt.tight_layout()
-plt.savefig(OUT_DIR / "HORA_DÍASEMANA.jpg", dpi=300, format='jpg', bbox_inches='tight')
-# Filtrar valores no deseados ANTES del pivot
-df_filtrado = df[
-    (~df["COMUNA"].str.upper().isin(["SIN INFORMACIÓN", "NONE", "IN", "NAN", "DESCONOCIDO"])) &
-    (df["COMUNA"].notna())
-].copy()
-
-# Crear pivot table
-df_pivot = df_filtrado.pivot_table(
-    index="COMUNA",      # filas
-    columns="JORNADA",   # columnas
-    values="GRAVEDAD_ACCIDENTE",  # valores para llenar
-    aggfunc="count",     # contar accidentes
-    fill_value=0
-)
-
-# Visualización
-plt.figure(figsize=(12, 8))
-sns.heatmap(df_pivot, annot=True, fmt="d", cmap="YlOrRd", 
-            linewidths=0.5, linecolor='white')
-plt.title("Mapa de Calor de Accidentes por Gravedad y Comuna", fontsize=14, fontweight='bold')
-plt.xlabel("Jornada", fontsize=12, fontweight='bold')
-plt.ylabel("", fontsize=12, fontweight='bold')
-plt.xticks(rotation=0)
-plt.tight_layout()
-plt.savefig(OUT_DIR / "GRAVEDAD_COMUNA.jpg", dpi=300, format='jpg', bbox_inches='tight')
 # =============================================================================
 # MATRIZ DE CONFUSIÓN
 # =============================================================================
@@ -620,8 +712,8 @@ def matriz_confusion_vibrante(y_test, y_pred, model_name="Modelo"):
         plt.rcParams['font.size'] = 10
         plt.rcParams['font.weight'] = 'bold'
         
-        fig, ax = plt.subplots(figsize=(10, 8), facecolor='black')
-        ax.set_facecolor("#000000")
+        fig, ax = plt.subplots(figsize=(10, 8), facecolor='white')
+        ax.set_facecolor("#F8F9F9")
         
         custom_cmap = sns.light_palette(PALETTE_MODEL_1, as_cmap=True, reverse=False)
         
@@ -654,17 +746,9 @@ def matriz_confusion_vibrante(y_test, y_pred, model_name="Modelo"):
         ax.set_xticklabels(class_names, fontsize=11, fontweight='bold', color='#2C3E50')
         ax.set_yticklabels(class_names, fontsize=11, fontweight='bold', color='#2C3E50', rotation=0)
         ax.set_xlabel('PREDICCIÓN DEL MODELO', fontsize=12, fontweight='bold', labelpad=15, color='#2C3E50')
-        ax.set_ylabel('', fontsize=12, fontweight='bold', labelpad=15, color='#2C3E50')
+        ax.set_ylabel('REAL', fontsize=12, fontweight='bold', labelpad=15, color='#2C3E50')
         
-        accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred, zero_division=0)
-        recall = recall_score(y_test, y_pred, zero_division=0)
-        f1 = f1_score(y_test, y_pred, zero_division=0)
-        
-        title = (f'MATRIZ DE CONFUSIÓN - {model_name.upper()}\n')
-                # f'Exactitud: {accuracy:.2%} | Precisión: {precision:.2%} | '
-                # f'Sensibilidad: {recall:.2%} | F1-Score: {f1:.4f}')
-        
+        title = f'MATRIZ DE CONFUSIÓN - {model_name.upper()}'
         ax.set_title(title, fontsize=14, fontweight='bold', pad=20, color='#2C3E50')
         
         ax.axhline(y=1, color='white', linewidth=2)
@@ -683,7 +767,7 @@ def matriz_confusion_vibrante(y_test, y_pred, model_name="Modelo"):
         ax.text(0.5, 0.5, f"Error: {e}", ha='center', va='center', transform=ax.transAxes)
         ax.set_title(f"Error en Matriz de Confusión - {model_name}")
         return fig, ax, np.array([[0, 0], [0, 0]])
-
+    
 # =============================================================================
 # GRÁFICA ROC MEJORADA
 # =============================================================================
@@ -1232,6 +1316,9 @@ def main():
     try:
         print("INICIANDO ANÁLISIS ")
         print("=" * 70)
+
+        print(f"Directorio de salida: {OUT_DIR}")
+        print(f"Directorio de modelos: {MODEL_DIR}")
         
         print("CARGANDO DATOS...")
         df = load_table(DB_PATH, "Accidentalidad_Vial_Antioquia")
