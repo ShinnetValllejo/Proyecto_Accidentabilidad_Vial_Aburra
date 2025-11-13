@@ -153,6 +153,8 @@ def mostrar_prediccion():
     )
     
     if not df_predicciones.empty:
+        # Los contenedores de div han sido ELIMINADOS.
+        # El CSS ahora se aplica directamente a los elementos.
         st.markdown("### 📊 Resumen de Predicciones")
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -190,6 +192,7 @@ def mostrar_prediccion():
             predicciones = ['TODOS'] + sorted(df_predicciones['PREDICCION'].dropna().unique().tolist())
             prediccion_sel = st.selectbox("Tipo de Predicción", predicciones)
 
+        # Aplicamos los filtros para crear el dataframe filtrado
         df_filtrado = df_predicciones.copy()
         if municipio_sel != 'TODOS':
             df_filtrado = df_filtrado[df_filtrado['MUNICIPIO'] == municipio_sel]
@@ -206,6 +209,7 @@ def mostrar_prediccion():
         if prediccion_sel != 'TODOS':
             df_filtrado = df_filtrado[df_filtrado['PREDICCION'] == prediccion_sel]
 
+        # Mostramos los resultados
         st.markdown(f"### 📋 Detalle de Predicciones ({len(df_filtrado)} registros)")
         
         columnas_disponibles = [
@@ -228,23 +232,11 @@ def mostrar_prediccion():
                 .map(style_confidence_level, subset=['CONFIANZA'] if 'CONFIANZA' in df_display.columns else [])\
                 .map(style_prediction, subset=['PREDICCION'] if 'PREDICCION' in df_display.columns else [])
             
-            # ==========================================================
-            # INICIO DEL CAMBIO: CÁLCULO DE ALTURA DINÁMICA
-            # ==========================================================
-            
-            # Calcula la altura para un máximo de 6 filas de datos + la fila de encabezado.
-            # Cada fila tiene una altura aproximada de 35px.
-            # (min(len(df_display), 6) + 1) calcula el número de filas a mostrar.
-            table_height = (min(len(df_display), 6) + 1) * 35 + 3
-
             st.dataframe(
                 styled_df,
                 use_container_width=True,
-                height=table_height  # Se usa la nueva altura dinámica en lugar de 400
+                height=400
             )
-            # ==========================================================
-            # FIN DEL CAMBIO
-            # ==========================================================
             
             st.markdown("### 📥 Exportar Datos")
             csv = df_filtrado.to_csv(index=False, encoding='utf-8')
