@@ -132,20 +132,40 @@ def mostrar_clasificacion():
         else:
             st.warning("Matriz de Confusión - Random Forest no encontrada")
     
-    # Comparación de modelos y curva ROC lado a lado
+    # Comparación de modelos y curva ROC lado a lado con altura fija
     st.markdown("### Métricas de Comparación")
     col3, col4 = st.columns(2)
+    
+    # CSS para forzar la misma altura en ambas gráficas
+    st.markdown("""
+    <style>
+    .uniform-height {
+        height: 500px !important;
+        object-fit: contain !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     with col3:
         comparacion_path = GRAFICAS_DIR / "Comparacion_Modelos.jpg"
         if comparacion_path.exists():
-            st.image(str(comparacion_path), use_container_width=True, caption="Comparación de Modelos")
+            # Usar markdown con CSS personalizado para controlar el tamaño
+            st.markdown(
+                f'<img src="data:image/jpg;base64,{get_base64_of_image(comparacion_path)}" class="uniform-height" style="width:100%">',
+                unsafe_allow_html=True
+            )
+            st.markdown("<p style='text-align: center; margin-top: 10px;'>Comparación de Modelos</p>", unsafe_allow_html=True)
         else:
             st.warning("Comparación de Modelos no encontrada")
     
     with col4:
         roc_path = GRAFICAS_DIR / "Curva_ROC_Comparativa.jpg"
         if roc_path.exists():
-            st.image(str(roc_path), use_container_width=True, caption="Curva ROC Comparativa")
+            # Usar markdown con CSS personalizado para controlar el tamaño
+            st.markdown(
+                f'<img src="data:image/jpg;base64,{get_base64_of_image(roc_path)}" class="uniform-height" style="width:100%">',
+                unsafe_allow_html=True
+            )
+            st.markdown("<p style='text-align: center; margin-top: 10px;'>Curva ROC Comparativa</p>", unsafe_allow_html=True)
         else:
             st.warning("Curva ROC Comparativa no encontrada")

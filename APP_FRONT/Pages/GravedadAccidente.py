@@ -27,6 +27,15 @@ def get_base64_of_image(img_path: Path) -> str:
     with open(img_path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
+def get_image_data_uri(img_path: Path) -> str:
+    """Convierte una imagen a data URI con el MIME type correcto."""
+    with open(img_path, "rb") as f:
+        base64_data = base64.b64encode(f.read()).decode()
+    ext = img_path.suffix.lower()
+    mime_map = {'.jpg': 'jpeg', '.jpeg': 'jpeg', '.png': 'png'}
+    mime = mime_map.get(ext, 'jpeg')
+    return f"data:image/{mime};base64,{base64_data}"
+
 def load_css(file_name: str):
     """Carga y aplica un archivo CSS externo."""
     css_path = STYLE_DIR / file_name
@@ -44,6 +53,7 @@ APP_DIR = PROJECT_ROOT / "APP_FRONT"
 STYLE_DIR = APP_DIR / "Pages" / "Style"
 IMG_PATH = APP_DIR / "Static" / "FondoVistas.png"
 DB_PATH = PROJECT_ROOT / "DATASETS" / "Destino" / "Proyecto_Accidentalidad_Vial_Antioquia.db"
+GRAFICAS_DIR = PROJECT_ROOT / "ETL_MODULES" / "Transform" / "Graficas_Salida"
 
 # ==========================================================
 # CARGA DE DATOS
@@ -107,3 +117,61 @@ def mostrar_gravedad():
         """,
         unsafe_allow_html=True,
     )
+
+    # ==========================================================
+    # VISUALIZACIÓN DE GRÁFICAS
+    # ==========================================================
+    
+    # CSS para forzar la misma altura en las gráficas
+    st.markdown("""
+    <style>
+    .uniform-height {
+        height: 500px !important;
+        object-fit: contain !important;
+    }
+    .full-width-height {
+        height: 600px !important;
+        object-fit: contain !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Mapa de calor solo (primera gráfica)
+    st.markdown("### Comunas con Mayor Número de Accidentes")
+    mapa_calor_path = GRAFICAS_DIR / "Accidentes_Comuna.jpg"
+    if mapa_calor_path.exists():
+        st.markdown(
+            f'<img src="{get_image_data_uri(mapa_calor_path)}" class="full-width-height" style="width:100%">',
+            unsafe_allow_html=True
+        )
+    
+    # Espacio entre secciones
+    st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
+    
+    # Resto de gráficas en pares
+    st.markdown("### Análisis de Gravedad y Distribución")
+    otras_imagenes = [
+        "GRAVEDAD_COMUNA.jpg",
+        "HORA_DÍASEMANA.jpg"
+    ]
+    
+    # Mostrar las imágenes en pares
+    for i in range(0, len(otras_imagenes), 2):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            img_path = GRAFICAS_DIR / otras_imagenes[i]
+            if img_path.exists():
+                st.markdown(
+                    f'<img src="{get_image_data_uri(img_path)}" class="uniform-height" style="width:100%">',
+                    unsafe_allow_html=True
+                )
+        
+        with col2:
+            if i + 1 < len(otras_imagenes):
+                img_path = GRAFICAS_DIR / otras_imagenes[i + 1]
+                if img_path.exists():
+                    st.markdown(
+                        f'<img src="{get_image_data_uri(img_path)}" class="uniform-height" style="width:100%">',
+                        unsafe_allow_html=True
+                    )

@@ -35,6 +35,42 @@ def load_css(file_name: str):
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     else:
         st.warning(f"No se encontró el archivo CSS: {file_name}")
+def format_percentage(value):
+    """Formatea valores numéricos como porcentaje."""
+    if isinstance(value, (int, float)):
+        return f"{value:.1%}"
+    elif isinstance(value, str) and '%' in value:
+        return value
+    else:
+        return str(value)
+
+def style_risk_level(val):
+    """Aplica estilos CSS a los niveles de riesgo."""
+    if val == "ALTO":
+        return 'background-color: #ff4b4b; color: white; font-weight: bold;'
+    elif val == "MEDIO":
+        return 'background-color: #ffa500; color: white; font-weight: bold;'
+    elif val == "BAJO":
+        return 'background-color: #4CAF50; color: white; font-weight: bold;'
+    return ''
+
+def style_confidence_level(val):
+    """Aplica estilos CSS a los niveles de confianza."""
+    if val == "ALTA":
+        return 'background-color: #4CAF50; color: white; font-weight: bold;'
+    elif val == "MEDIA":
+        return 'background-color: #ffa500; color: white; font-weight: bold;'
+    elif val == "BAJA":
+        return 'background-color: #ff4b4b; color: white; font-weight: bold;'
+    return ''
+
+def style_prediction(val):
+    """Aplica estilos CSS a las predicciones."""
+    if val == "CON HERIDOS":
+        return 'background-color: #ff4b4b; color: white; font-weight: bold;'
+    elif val == "SOLO DAÑOS":
+        return 'background-color: #4CAF50; color: white; font-weight: bold;'
+    return ''
 
 # ==========================================================
 # CONFIGURACIÓN DE RUTAS
@@ -44,6 +80,7 @@ APP_DIR = PROJECT_ROOT / "APP_FRONT"
 STYLE_DIR = APP_DIR / "Pages" / "Style"
 IMG_PATH = APP_DIR / "Static" / "FondoVistas.png"
 DB_PATH = PROJECT_ROOT / "DATASETS" / "Destino" / "Proyecto_Accidentalidad_Vial_Antioquia.db"
+PREDICCIONES_CSV_PATH = PROJECT_ROOT / "ETL_MODULES" / "Transform" / "Modelo_Predict" / "Predicciones_Random_Forest.csv"
 
 # ==========================================================
 # CARGA DE DATOS
@@ -55,8 +92,25 @@ def load_data():
     df = pd.read_sql("SELECT * FROM Accidentalidad_Vial_Antioquia", engine)
     df.columns = [col.strip().upper() for col in df.columns]
     return df
-
+@st.cache_data
+def load_predictions():
+    """Carga las predicciones del modelo Random Forest."""
+    if PREDICCIONES_CSV_PATH.exists():
+        try:
+            df = pd.read_csv(PREDICCIONES_CSV_PATH, encoding='utf-8')
+        except UnicodeDecodeError:
+            # Intentar con diferentes codificaciones si falla UTF-8
+            df = pd.read_csv(PREDICCIONES_CSV_PATH, encoding='latin-1')
+        
+        # Limpiar nombres de columnas
+        df.columns = [col.strip().upper() for col in df.columns]
+        return df
+    else:
+        st.error(f"Archivo de predicciones no encontrado: {PREDICCIONES_CSV_PATH}")
+        return pd.DataFrame()
+    
 df = load_data()
+df_predicciones = load_predictions()
 
 # ==========================================================
 # FUNCIÓN PRINCIPAL DE LA VISTA
@@ -107,3 +161,126 @@ def mostrar_prediccion():
         """,
         unsafe_allow_html=True,
     )
+    # ==========================================================
+    # VISUALIZACIÓN DE PREDICCIONES
+    # ==========================================================
+    
+    if not df_predicciones.empty:
+        # Estadísticas rápidas
+        st.markdown("### 📊 Resumen de Predicciones")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            total_pred = len(df_predicciones)
+            st.metric("Total Predicciones", total_pred)
+        
+        with col2:
+            alto_riesgo = len(df_predicciones[df_predicciones['RIESGO'] == 'ALTO'])
+            st.metric("Alto Riesgo", alto_riesgo)
+        
+        with col3:
+            con_heridos = len(df_predicciones[df_predicciones['PREDICCION'] == 'CON HERIDOS'])
+            st.metric("Con Heridos", con_heridos)
+        
+        with col4:
+            alta_confianza = len(df_predicciones[df_predicciones['CONFIANZA'] == 'ALTA'])
+            st.metric("Alta Confianza", alta_confianza)
+        
+        # Filtros avanzados
+        st.markdown("### 🔍 Filtros de Predicciones")
+        col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+        
+        with col_f1:
+            municipios = ['TODOS'] + sorted(df_predicciones['MUNICIPIO'].dropna().unique().tolist())
+            municipio_sel = st.selectbox("Municipio", municipios)
+        
+        with col_f2:
+            comunas = ['TODOS'] + sorted(df_predicciones['COMUNA'].dropna().unique().tolist())
+            comuna_sel = st.selectbox("Comuna", comunas)
+        
+        with col_f3:
+            riesgos = ['TODOS'] + sorted(df_predicciones['RIESGO'].dropna().unique().tolist())
+            riesgo_sel = st.selectbox("Nivel de Riesgo", riesgos)
+        
+        with col_f4:
+            confianzas = ['TODOS'] + sorted(df_predicciones['CONFIANZA'].dropna().unique().tolist())
+            confianza_sel = st.selectbox("Nivel de Confianza", confianzas)
+        
+        # Filtros adicionales
+        col_f5, col_f6, col_f7 = st.columns(3)
+        
+        with col_f5:
+            jornadas = ['TODOS'] + sorted(df_predicciones['JORNADA'].dropna().unique().tolist())
+            jornada_sel = st.selectbox("Jornada", jornadas)
+        
+        with col_f6:
+            clases = ['TODOS'] + sorted(df_predicciones['CLASE'].dropna().unique().tolist())
+            clase_sel = st.selectbox("Clase de Accidente", clases)
+        
+        with col_f7:
+            predicciones = ['TODOS'] + sorted(df_predicciones['PREDICCION'].dropna().unique().tolist())
+            prediccion_sel = st.selectbox("Tipo de Predicción", predicciones)
+        
+        # Aplicar filtros
+        df_filtrado = df_predicciones.copy()
+        if municipio_sel != 'TODOS':
+            df_filtrado = df_filtrado[df_filtrado['MUNICIPIO'] == municipio_sel]
+        if comuna_sel != 'TODOS':
+            df_filtrado = df_filtrado[df_filtrado['COMUNA'] == comuna_sel]
+        if riesgo_sel != 'TODOS':
+            df_filtrado = df_filtrado[df_filtrado['RIESGO'] == riesgo_sel]
+        if confianza_sel != 'TODOS':
+            df_filtrado = df_filtrado[df_filtrado['CONFIANZA'] == confianza_sel]
+        if jornada_sel != 'TODOS':
+            df_filtrado = df_filtrado[df_filtrado['JORNADA'] == jornada_sel]
+        if clase_sel != 'TODOS':
+            df_filtrado = df_filtrado[df_filtrado['CLASE'] == clase_sel]
+        if prediccion_sel != 'TODOS':
+            df_filtrado = df_filtrado[df_filtrado['PREDICCION'] == prediccion_sel]
+        
+        # Mostrar resultados filtrados
+        st.markdown(f"### 📋 Detalle de Predicciones ({len(df_filtrado)} registros)")
+        
+        # Selección de columnas a mostrar
+        columnas_disponibles = [
+            'MUNICIPIO', 'COMUNA', 'CLASE', 'JORNADA', 'PREDICCION', 
+            'PROBABILIDAD_HERIDOS', 'CONFIANZA', 'RIESGO', 'NUM_HORA',
+            'FIN_DE_SEMANA', 'HORA_PICO', 'HORA_NOCTURNA'
+        ]
+        
+        columnas_seleccionadas = st.multiselect(
+            "Seleccionar columnas a mostrar:",
+            options=columnas_disponibles,
+            default=['MUNICIPIO', 'COMUNA', 'JORNADA', 'PREDICCION', 'PROBABILIDAD_HERIDOS', 'CONFIANZA', 'RIESGO']
+        )
+        
+        if columnas_seleccionadas:
+            df_display = df_filtrado[columnas_seleccionadas].copy()
+            
+            # Aplicar estilos a la tabla
+            styled_df = df_display.style\
+                .map(style_risk_level, subset=['RIESGO'] if 'RIESGO' in df_display.columns else [])\
+                .map(style_confidence_level, subset=['CONFIANZA'] if 'CONFIANZA' in df_display.columns else [])\
+                .map(style_prediction, subset=['PREDICCION'] if 'PREDICCION' in df_display.columns else [])
+            
+            st.dataframe(
+                styled_df,
+                use_container_width=True,
+                height=400
+            )
+            
+            # Descarga de datos
+            st.markdown("### 📥 Exportar Datos")
+            csv = df_filtrado.to_csv(index=False, encoding='utf-8')
+            st.download_button(
+                label="Descargar predicciones filtradas (CSV)",
+                data=csv,
+                file_name="predicciones_filtradas.csv",
+                mime="text/csv"
+            )
+        else:
+            st.warning("Por favor selecciona al menos una columna para mostrar.")
+        
+    else:
+        st.warning("No se encontraron datos de predicciones para mostrar.")
