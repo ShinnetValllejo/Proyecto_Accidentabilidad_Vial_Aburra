@@ -1,3 +1,4 @@
+
 # ==========================================================
 # MÓDULO: CLASIFICACION
 # ==========================================================
@@ -7,6 +8,7 @@ import pandas as pd
 import base64
 from pathlib import Path
 from sqlalchemy import create_engine
+from APP_FRONT.nav import generar_barra_navegacion
 
 # ==========================================================
 # FUNCIONES DE UTILIDAD
@@ -90,31 +92,7 @@ def mostrar_clasificacion():
     # ==========================================================
     # BARRA DE NAVEGACIÓN
     # ==========================================================
-    st.markdown("<div class='nav-bar'>", unsafe_allow_html=True)
-    col_home, col_indic, col_gravedad, col_clasif, col_pred = st.columns(5, gap="small")
-
-    with col_home:
-        if st.button("🏠 INICIO"):
-            st.session_state["pagina"] = "inicio"
-            st.rerun()
-    with col_indic:
-        st.button("🛣️ Indicadores Generales")
-    with col_gravedad:
-        if st.button("🚑 Gravedad Accidente"):
-            st.session_state["pagina"] = "gravedad"
-            st.rerun()
-    with col_clasif:
-        if st.button("🔬 Modelo de Clasificación", disabled=True):
-            st.session_state["pagina"] = "clasificacion"
-            st.rerun()
-    with col_pred:
-        if st.button("🔮 Modelo Predictivo"):
-            st.session_state["pagina"] = "predictivo"
-            st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # Separador visual
-    st.markdown("<div class='nav-separator'></div>", unsafe_allow_html=True)
+    generar_barra_navegacion()
 
     # ==========================================================
     # TÍTULOS
