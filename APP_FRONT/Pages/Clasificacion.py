@@ -45,6 +45,7 @@ APP_DIR = PROJECT_ROOT / "APP_FRONT"
 STYLE_DIR = APP_DIR / "Pages" / "Style"
 IMG_PATH = APP_DIR / "Static" / "FondoVistas.png"
 DB_PATH = PROJECT_ROOT / "DATASETS" / "Destino" / "Proyecto_Accidentalidad_Vial_Antioquia.db"
+GRAFICAS_DIR = PROJECT_ROOT / "ETL_MODULES" / "Transform" / "Graficas_Salida"
 
 # ==========================================================
 # CARGA DE DATOS
@@ -108,3 +109,43 @@ def mostrar_clasificacion():
         """,
         unsafe_allow_html=True,
     )
+
+    # ==========================================================
+    # VISUALIZACIÓN DE GRÁFICAS
+    # ==========================================================
+    
+    # Matrices de confusión lado a lado
+    st.markdown("### Matrices de Confusión")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        matriz_arbol_path = GRAFICAS_DIR / "Matriz_Confusion_Arbol_Decision.jpg"
+        if matriz_arbol_path.exists():
+            st.image(str(matriz_arbol_path), use_container_width=True, caption="Árbol de Decisión")
+        else:
+            st.warning("Matriz de Confusión - Árbol de Decisión no encontrada")
+    
+    with col2:
+        matriz_rf_path = GRAFICAS_DIR / "Matriz_Confusion_RF.jpg"
+        if matriz_rf_path.exists():
+            st.image(str(matriz_rf_path), use_container_width=True, caption="Random Forest")
+        else:
+            st.warning("Matriz de Confusión - Random Forest no encontrada")
+    
+    # Comparación de modelos y curva ROC lado a lado
+    st.markdown("### Métricas de Comparación")
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        comparacion_path = GRAFICAS_DIR / "Comparacion_Modelos.jpg"
+        if comparacion_path.exists():
+            st.image(str(comparacion_path), use_container_width=True, caption="Comparación de Modelos")
+        else:
+            st.warning("Comparación de Modelos no encontrada")
+    
+    with col4:
+        roc_path = GRAFICAS_DIR / "Curva_ROC_Comparativa.jpg"
+        if roc_path.exists():
+            st.image(str(roc_path), use_container_width=True, caption="Curva ROC Comparativa")
+        else:
+            st.warning("Curva ROC Comparativa no encontrada")
