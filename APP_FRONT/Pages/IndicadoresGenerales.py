@@ -45,9 +45,7 @@ APP_DIR = PROJECT_ROOT / "APP_FRONT"
 STYLE_DIR = APP_DIR / "Pages" / "Style"
 IMG_PATH = APP_DIR / "Static" / "FondoVistas.png"
 DB_PATH = PROJECT_ROOT / "DATASETS" / "Destino" / "Proyecto_Accidentalidad_Vial_Antioquia.db"
-# --- Nueva ruta para las gráficas ---
 GRAFICAS_DIR = PROJECT_ROOT / "ETL_MODULES" / "Transform" / "Graficas_Salida"
-
 
 # ==========================================================
 # CARGA DE DATOS
@@ -113,24 +111,42 @@ def mostrar_indicadores():
     )
 
     # ==========================================================
+    # CÁLCULO DE TASAS (PORCENTAJES)
+    # ==========================================================
+    # Total de accidentes
+    total_accidentes = len(df)
+    
+    # Contar por gravedad
+    totales = df.groupby("GRAVEDAD_ACCIDENTE").size().to_dict()
+    
+    # Calcular tasas (porcentajes)
+    muertos_count = totales.get("MUERTOS", 0)
+    heridos_count = totales.get("HERIDOS", 0)
+    danos_count = totales.get("DAÑOS", 0)
+    
+    tasa_muertos = (muertos_count / total_accidentes * 100) if total_accidentes > 0 else 0
+    tasa_heridos = (heridos_count / total_accidentes * 100) if total_accidentes > 0 else 0
+    tasa_danos = (danos_count / total_accidentes * 100) if total_accidentes > 0 else 0
+
+    # ==========================================================
     # TARJETAS DE MÉTRICAS
     # ==========================================================
     col1, col2, col3, col4 = st.columns(4, gap="small")
-    totales = df.groupby("GRAVEDAD_ACCIDENTE").size().to_dict()
 
     tarjetas = [
-        ("#FF6B6B", "Tasa Muertos", totales.get("MUERTOS", 0)),
-        ("#FFD93D", "Tasa Heridos", totales.get("HERIDOS", 0)),
-        ("#6BCB77", "Tasa Daños", totales.get("DAÑOS", 0)),
-        ("#4D96FF", "Total Accidentes", len(df))
+        ("#FF6B6B", "Tasa Muertos", f"{tasa_muertos:.2f}%", f"({muertos_count:,} casos)"),
+        ("#FFD93D", "Tasa Heridos", f"{tasa_heridos:.2f}%", f"({heridos_count:,} casos)"),
+        ("#6BCB77", "Tasa Daños", f"{tasa_danos:.2f}%", f"({danos_count:,} casos)"),
+        ("#4D96FF", "Total Accidentes", f"{total_accidentes:,}", "")
     ]
 
-    for col, (color, title, value) in zip([col1, col2, col3, col4], tarjetas):
+    for col, (color, title, value, subtitle) in zip([col1, col2, col3, col4], tarjetas):
         col.markdown(
             f"""
             <div class='metric-card' style='background-color:{color};'>
                 <div class='metric-title'>{title}</div>
                 <div class='metric-value'>{value}</div>
+                <div class='metric-subtitle'>{subtitle}</div>
             </div>
             """,
             unsafe_allow_html=True
@@ -142,52 +158,9 @@ def mostrar_indicadores():
     # ==========================================================
     # VISUALIZACIÓN DE GRÁFICAS
     # ==========================================================
-
-    # --- Fila 1 de Gráficas ---
-    col_g1, col_g2 = st.columns(2, gap="medium")
-
-    with col_g1:
-        st.markdown("<h3 class='graph-title'>Accidentes por Gravedad</h3>", unsafe_allow_html=True)
-        img_gravedad_path = GRAFICAS_DIR / "Accidentes_Gravedad.jpg"
-        if img_gravedad_path.exists():
-            st.image(str(img_gravedad_path), use_container_width=True)
-        else:
-            st.warning(f"Gráfica no encontrada: {img_gravedad_path.name}")
-
-    with col_g2:
-        st.markdown("<h3 class='graph-title'>Accidentes por Jornada</h3>", unsafe_allow_html=True)
-        img_comuna_path = GRAFICAS_DIR / "Accidentes_Jornada.jpg"
-        if img_comuna_path.exists():
-            st.image(str(img_comuna_path), use_container_width=True)
-        else:
-            st.warning(f"Gráfica no encontrada: {img_comuna_path.name}")
-
-    # Espaciador
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-
-    # --- Fila 2 de Gráficas ---
-    col_g3, col_g4 = st.columns(2, gap="medium")
-
-    with col_g3:
-        st.markdown("<h3 class='graph-title'>Accidentes por Comuna</h3>", unsafe_allow_html=True)
-        img_jornada_path = GRAFICAS_DIR / "Accidentes_Jornada.jpg"
-        if img_jornada_path.exists():
-            st.image(str(img_jornada_path), use_container_width=True)
-        else:
-            st.warning(f"Gráfica no encontrada: {img_jornada_path.name}")
-
-    with col_g4:
-        st.markdown("<h3 class='graph-title'>Accidentes por Clase</h3>", unsafe_allow_html=True)
-        img_evolucion_path = GRAFICAS_DIR / "Accidentes_Clase.jpg"
-        if img_evolucion_path.exists():
-            st.image(str(img_evolucion_path), use_container_width=True)
-        else:
-            st.warning(f"Gráfica no encontrada: {img_evolucion_path.name}")
-
-    # --- Nueva Fila para Accidentes por Clase ---
-    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True) # Espaciador
     st.markdown("<h3 class='graph-title'>Evolución Temporal por Gravedad</h3>", unsafe_allow_html=True)
-    _ , col_centro, _ = st.columns([0.5, 2, 0.5]) # Proporción 1:2:1
+    _, col_centro, _ = st.columns([0.5, 2, 0.5])
     
     with col_centro:
         img_clase_path = GRAFICAS_DIR / "Evolucion_Temporal_Gravedad.jpg"
@@ -195,9 +168,24 @@ def mostrar_indicadores():
             st.image(str(img_clase_path), use_container_width=True)
         else:
             st.warning(f"Gráfica no encontrada: {img_clase_path.name}")
+    
+    # Matrices de confusión lado a lado
+    st.markdown("### Accidentes por Gravedad y Clase")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        accidentes_path = GRAFICAS_DIR / "Accidentes_Gravedad.jpg"
+        if accidentes_path.exists():
+            st.image(str(accidentes_path), use_container_width=True, caption="Accidentes por Gravedad del Siniestro")
+        else:
+            st.warning("Accidentes_Gravedad no encontrada")
+    
+    with col2:
+        clase_path = GRAFICAS_DIR / "Accidentes_Clase.jpg"
+        if clase_path.exists():
+            st.image(str(clase_path), use_container_width=True, caption="Mayor Número de Accidentes por Clase")
+        else:
+            st.warning("Accidentes_Clase no encontrada")
 
-
-
-# Esta línea es necesaria si ejecutas este archivo directamente para pruebas
-if __name__ == "__main__":
-    mostrar_indicadores()
+    # Espaciador
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)

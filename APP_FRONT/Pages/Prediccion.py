@@ -35,6 +35,7 @@ def load_css(file_name: str):
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     else:
         st.warning(f"No se encontró el archivo CSS: {file_name}")
+
 def format_percentage(value):
     """Formatea valores numéricos como porcentaje."""
     if isinstance(value, (int, float)):
@@ -92,6 +93,7 @@ def load_data():
     df = pd.read_sql("SELECT * FROM Accidentalidad_Vial_Antioquia", engine)
     df.columns = [col.strip().upper() for col in df.columns]
     return df
+
 @st.cache_data
 def load_predictions():
     """Carga las predicciones del modelo Random Forest."""
@@ -99,10 +101,8 @@ def load_predictions():
         try:
             df = pd.read_csv(PREDICCIONES_CSV_PATH, encoding='utf-8')
         except UnicodeDecodeError:
-            # Intentar con diferentes codificaciones si falla UTF-8
             df = pd.read_csv(PREDICCIONES_CSV_PATH, encoding='latin-1')
         
-        # Limpiar nombres de columnas
         df.columns = [col.strip().upper() for col in df.columns]
         return df
     else:
@@ -116,7 +116,6 @@ df_predicciones = load_predictions()
 # FUNCIÓN PRINCIPAL DE LA VISTA
 # ==========================================================
 def mostrar_prediccion():
-    # Fondo con imagen
     if IMG_PATH.exists():
         bg_base64 = get_base64_of_image(IMG_PATH)
         st.markdown(
@@ -136,20 +135,11 @@ def mostrar_prediccion():
     else:
         st.warning(f"No se encontró la imagen de fondo: {IMG_PATH}")
 
-    # Estilos CSS
     load_css("prediccion.css")
-
-    # Espaciado superior mínimo
     st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
 
-    # ==========================================================
-    # BARRA DE NAVEGACIÓN
-    # ==========================================================
     generar_barra_navegacion()
 
-    # ==========================================================
-    # TÍTULOS
-    # ==========================================================
     st.markdown(
         """
         <div class="title-block">
@@ -161,68 +151,45 @@ def mostrar_prediccion():
         """,
         unsafe_allow_html=True,
     )
-    # ==========================================================
-    # VISUALIZACIÓN DE PREDICCIONES
-    # ==========================================================
     
     if not df_predicciones.empty:
-        # Estadísticas rápidas
         st.markdown("### 📊 Resumen de Predicciones")
-        
         col1, col2, col3, col4 = st.columns(4)
-        
         with col1:
-            total_pred = len(df_predicciones)
-            st.metric("Total Predicciones", total_pred)
-        
+            st.metric("Total Predicciones", len(df_predicciones))
         with col2:
-            alto_riesgo = len(df_predicciones[df_predicciones['RIESGO'] == 'ALTO'])
-            st.metric("Alto Riesgo", alto_riesgo)
-        
+            st.metric("Alto Riesgo", len(df_predicciones[df_predicciones['RIESGO'] == 'ALTO']))
         with col3:
-            con_heridos = len(df_predicciones[df_predicciones['PREDICCION'] == 'CON HERIDOS'])
-            st.metric("Con Heridos", con_heridos)
-        
+            st.metric("Con Heridos", len(df_predicciones[df_predicciones['PREDICCION'] == 'CON HERIDOS']))
         with col4:
-            alta_confianza = len(df_predicciones[df_predicciones['CONFIANZA'] == 'ALTA'])
-            st.metric("Alta Confianza", alta_confianza)
+            st.metric("Alta Confianza", len(df_predicciones[df_predicciones['CONFIANZA'] == 'ALTA']))
         
-        # Filtros avanzados
         st.markdown("### 🔍 Filtros de Predicciones")
         col_f1, col_f2, col_f3, col_f4 = st.columns(4)
-        
         with col_f1:
             municipios = ['TODOS'] + sorted(df_predicciones['MUNICIPIO'].dropna().unique().tolist())
             municipio_sel = st.selectbox("Municipio", municipios)
-        
         with col_f2:
             comunas = ['TODOS'] + sorted(df_predicciones['COMUNA'].dropna().unique().tolist())
             comuna_sel = st.selectbox("Comuna", comunas)
-        
         with col_f3:
             riesgos = ['TODOS'] + sorted(df_predicciones['RIESGO'].dropna().unique().tolist())
             riesgo_sel = st.selectbox("Nivel de Riesgo", riesgos)
-        
         with col_f4:
             confianzas = ['TODOS'] + sorted(df_predicciones['CONFIANZA'].dropna().unique().tolist())
             confianza_sel = st.selectbox("Nivel de Confianza", confianzas)
         
-        # Filtros adicionales
         col_f5, col_f6, col_f7 = st.columns(3)
-        
         with col_f5:
             jornadas = ['TODOS'] + sorted(df_predicciones['JORNADA'].dropna().unique().tolist())
             jornada_sel = st.selectbox("Jornada", jornadas)
-        
         with col_f6:
             clases = ['TODOS'] + sorted(df_predicciones['CLASE'].dropna().unique().tolist())
             clase_sel = st.selectbox("Clase de Accidente", clases)
-        
         with col_f7:
             predicciones = ['TODOS'] + sorted(df_predicciones['PREDICCION'].dropna().unique().tolist())
             prediccion_sel = st.selectbox("Tipo de Predicción", predicciones)
-        
-        # Aplicar filtros
+
         df_filtrado = df_predicciones.copy()
         if municipio_sel != 'TODOS':
             df_filtrado = df_filtrado[df_filtrado['MUNICIPIO'] == municipio_sel]
@@ -238,11 +205,9 @@ def mostrar_prediccion():
             df_filtrado = df_filtrado[df_filtrado['CLASE'] == clase_sel]
         if prediccion_sel != 'TODOS':
             df_filtrado = df_filtrado[df_filtrado['PREDICCION'] == prediccion_sel]
-        
-        # Mostrar resultados filtrados
+
         st.markdown(f"### 📋 Detalle de Predicciones ({len(df_filtrado)} registros)")
         
-        # Selección de columnas a mostrar
         columnas_disponibles = [
             'MUNICIPIO', 'COMUNA', 'CLASE', 'JORNADA', 'PREDICCION', 
             'PROBABILIDAD_HERIDOS', 'CONFIANZA', 'RIESGO', 'NUM_HORA',
@@ -258,19 +223,29 @@ def mostrar_prediccion():
         if columnas_seleccionadas:
             df_display = df_filtrado[columnas_seleccionadas].copy()
             
-            # Aplicar estilos a la tabla
             styled_df = df_display.style\
                 .map(style_risk_level, subset=['RIESGO'] if 'RIESGO' in df_display.columns else [])\
                 .map(style_confidence_level, subset=['CONFIANZA'] if 'CONFIANZA' in df_display.columns else [])\
                 .map(style_prediction, subset=['PREDICCION'] if 'PREDICCION' in df_display.columns else [])
             
+            # ==========================================================
+            # INICIO DEL CAMBIO: CÁLCULO DE ALTURA DINÁMICA
+            # ==========================================================
+            
+            # Calcula la altura para un máximo de 6 filas de datos + la fila de encabezado.
+            # Cada fila tiene una altura aproximada de 35px.
+            # (min(len(df_display), 6) + 1) calcula el número de filas a mostrar.
+            table_height = (min(len(df_display), 6) + 1) * 35 + 3
+
             st.dataframe(
                 styled_df,
                 use_container_width=True,
-                height=400
+                height=table_height  # Se usa la nueva altura dinámica en lugar de 400
             )
+            # ==========================================================
+            # FIN DEL CAMBIO
+            # ==========================================================
             
-            # Descarga de datos
             st.markdown("### 📥 Exportar Datos")
             csv = df_filtrado.to_csv(index=False, encoding='utf-8')
             st.download_button(

@@ -129,49 +129,60 @@ def mostrar_gravedad():
         height: 500px !important;
         object-fit: contain !important;
     }
-    .full-width-height {
-        height: 600px !important;
-        object-fit: contain !important;
-    }
     </style>
     """, unsafe_allow_html=True)
     
-    # Mapa de calor solo (primera gráfica)
-    st.markdown("### Comunas con Mayor Número de Accidentes")
-    mapa_calor_path = GRAFICAS_DIR / "Accidentes_Comuna.jpg"
-    if mapa_calor_path.exists():
-        st.markdown(
-            f'<img src="{get_image_data_uri(mapa_calor_path)}" class="full-width-height" style="width:100%">',
-            unsafe_allow_html=True
-        )
+    # ✅ PRIMER PAR: Accidentes por Comuna y Jornada
+    st.markdown("### Distribución de Accidentes por Comuna y Jornada")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        accidentes_comuna_path = GRAFICAS_DIR / "Accidentes_Comuna.jpg"
+        if accidentes_comuna_path.exists():
+            st.markdown(
+                f'<img src="{get_image_data_uri(accidentes_comuna_path)}" class="uniform-height" style="width:100%">',
+                unsafe_allow_html=True
+            )
+        else:
+            st.warning("No se encontró: Accidentes_Comuna.jpg")
+    
+    with col2:
+        accidentes_jornada_path = GRAFICAS_DIR / "Accidentes_Jornada.jpg"
+        if accidentes_jornada_path.exists():
+            st.markdown(
+                f'<img src="{get_image_data_uri(accidentes_jornada_path)}" class="uniform-height" style="width:100%">',
+                unsafe_allow_html=True
+            )
+        else:
+            st.warning("No se encontró: Accidentes_Jornada.jpg")
     
     # Espacio entre secciones
     st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
     
-    # Resto de gráficas en pares
-    st.markdown("### Análisis de Gravedad y Distribución")
-    otras_imagenes = [
-        "GRAVEDAD_COMUNA.jpg",
-        "HORA_DÍASEMANA.jpg"
-    ]
+    # ✅ SEGUNDO PAR: Gravedad por Comuna y Hora/Día
+    st.markdown("### Análisis de Gravedad y Distribución Temporal")
     
-    # Mostrar las imágenes en pares
-    for i in range(0, len(otras_imagenes), 2):
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            img_path = GRAFICAS_DIR / otras_imagenes[i]
-            if img_path.exists():
-                st.markdown(
-                    f'<img src="{get_image_data_uri(img_path)}" class="uniform-height" style="width:100%">',
-                    unsafe_allow_html=True
-                )
-        
-        with col2:
-            if i + 1 < len(otras_imagenes):
-                img_path = GRAFICAS_DIR / otras_imagenes[i + 1]
-                if img_path.exists():
-                    st.markdown(
-                        f'<img src="{get_image_data_uri(img_path)}" class="uniform-height" style="width:100%">',
-                        unsafe_allow_html=True
-                    )
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        gravedad_comuna_path = GRAFICAS_DIR / "GRAVEDAD_COMUNA.jpg"
+        if gravedad_comuna_path.exists():
+            st.markdown(
+                f'<img src="{get_image_data_uri(gravedad_comuna_path)}" class="uniform-height" style="width:100%">',
+                unsafe_allow_html=True
+            )
+        else:
+            st.warning("No se encontró: GRAVEDAD_COMUNA.jpg")
+    
+    with col4:
+        hora_diasemana_path = GRAFICAS_DIR / "HORA_DÍASEMANA.jpg"
+        if hora_diasemana_path.exists():
+            st.markdown(
+                f'<img src="{get_image_data_uri(hora_diasemana_path)}" class="uniform-height" style="width:100%">',
+                unsafe_allow_html=True
+            )
+        else:
+            st.warning("No se encontró: HORA_DÍASEMANA.jpg")
+
+
