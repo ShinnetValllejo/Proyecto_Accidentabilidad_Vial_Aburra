@@ -33,7 +33,7 @@
    ============================================================ */
 /* Apuntamos directamente al contenedor de cada métrica */
 [data-testid="stMetric"] {
-    background-color: rgba(0, 0, 0, 0.55); /* Fondo oscuro */
+    background-color: rgba(0, 46, 253, 0.55); /* Fondo oscuro */
     border-radius: 12px; /* Bordes redondeados */
     padding: 1rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
@@ -50,7 +50,7 @@
    ============================================================ */
 /* Estilo para Selectbox y Multiselect */
 [data-testid="stSelectbox"], [data-testid="stMultiSelect"] {
-    background-color: #0E1117; /* Color oscuro base de Streamlit */
+    background-color: #003584; /* Color oscuro base de Streamlit */
     border-radius: 8px;
     padding: 0.5rem 0.75rem; /* Espaciado interno para que no se vea apretado */
     border: 1px solid rgba(255, 255, 255, 0.2);
