@@ -1,12 +1,12 @@
 # ==========================================================
-# MÓDULO: Indicadores Generales
+# MÓDULO: INDICADORES GENERALES
 # ==========================================================
 
 import streamlit as st
 import pandas as pd
+import base64
 from pathlib import Path
 from sqlalchemy import create_engine
-import base64
 
 # ==========================================================
 # FUNCIONES DE UTILIDAD
@@ -61,8 +61,6 @@ df = load_data()
 # FUNCIÓN PRINCIPAL DE LA VISTA
 # ==========================================================
 def mostrar_indicadores():
-    """Renderiza la vista de Indicadores Generales en Streamlit."""
-
     # Fondo con imagen
     if IMG_PATH.exists():
         bg_base64 = get_base64_of_image(IMG_PATH)

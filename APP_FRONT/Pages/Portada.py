@@ -1,5 +1,7 @@
 # ==========================================================
 # MÓDULO: Portada del Dashboard
+# Descripción: Vista de inicio con fondo, título principal
+#               y botones de navegación entre vistas.
 # ==========================================================
 
 import streamlit as st
