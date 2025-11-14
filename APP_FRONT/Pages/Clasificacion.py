@@ -100,7 +100,7 @@ def mostrar_clasificacion():
     st.markdown(
         """
         <div class="title-block">
-            <h1 class="dashboard-title">🔬 Modelo de Clasificación</h1>
+            <h1 class="dashboard-title">🔬 Entrenamiento y Evaluación</h1>
             <h2 class="dashboard-subtitle">
                 Accidentabilidad vial en el Valle de Aburrá (2015–2019)
             </h2>
