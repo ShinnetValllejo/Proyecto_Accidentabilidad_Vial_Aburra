@@ -33,7 +33,7 @@
    ============================================================ */
 /* Apuntamos directamente al contenedor de cada métrica */
 [data-testid="stMetric"] {
-    background-color: rgba(0, 46, 253, 0.55); /* Fondo oscuro */
+    background-color: rgba(0, 34, 185, 0.463); /* Fondo oscuro */
     border-radius: 12px; /* Bordes redondeados */
     padding: 1rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);

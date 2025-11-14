@@ -341,7 +341,6 @@ def mapa_calor_accidentes(df: pd.DataFrame, path: Path):
         print(f"Error generando mapa de calor: {e}")
 
 def grafica_tendencia_gravedad(df: pd.DataFrame, path: Path):
-    """Genera gráfica de tendencia temporal de accidentes por gravedad"""
     try:
         df_clean = df.copy()
         
@@ -428,7 +427,7 @@ def grafica_tendencia_gravedad(df: pd.DataFrame, path: Path):
             color='#2C3E50'
         )
         ax.set_xlabel('PERIODO (AÑO-MES)', fontsize=12, fontweight='bold', color='#2C3E50')
-        ax.set_ylabel('NÚMERO DE ACCIDENTES', fontsize=12, fontweight='bold', color='#2C3E50')
+        ax.set_ylabel(' ', fontsize=12, fontweight='bold', color='#2C3E50')
         
         ax.legend(
             title='Gravedad del Accidente',
