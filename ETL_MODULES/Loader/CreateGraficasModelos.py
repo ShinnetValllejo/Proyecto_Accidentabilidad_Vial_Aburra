@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import joblib
-
 from pathlib import Path
 from sqlalchemy import create_engine
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
@@ -108,11 +107,6 @@ def paleta_presentacion(n: int):
         return PALETTE_VIBRANT[:n]
     else:
         return sns.color_palette("husl", n_colors=n)
-
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from pathlib import Path
 
 # Función auxiliar para decidir color del texto según fondo
 def txt_color(rgb):
@@ -322,7 +316,7 @@ def mapa_calor_accidentes(df: pd.DataFrame, path: Path):
             color='#2C3E50'
         )
         ax.set_xlabel('COMUNA', fontsize=12, fontweight='bold', color='#2C3E50', labelpad=12)
-        ax.set_ylabel('MUNICIPIO', fontsize=12, fontweight='bold', color='#2C3E50', labelpad=12)
+        ax.set_ylabel(' ', fontsize=12, fontweight='bold', color='#2C3E50', labelpad=12)
         
         # Mejorar legibilidad de etiquetas
         plt.xticks(rotation=45, ha='right', fontsize=9, fontweight='bold')
@@ -485,7 +479,7 @@ def generar_mapas_calor_adicionales(df: pd.DataFrame):
             sns.heatmap(df_heatmap, annot=True, fmt="d", cmap="YlOrRd")
             plt.title("Mapa de Calor de Accidentes por Hora y Día de la Semana", fontsize=14)
             plt.xlabel("Día de la Semana")
-            plt.ylabel("Hora")
+            plt.ylabel(" ")
             plt.tight_layout()
             plt.savefig(OUT_DIR / "HORA_DIASEMANA.jpg", dpi=300, format='jpg', bbox_inches='tight')
             plt.close()
@@ -511,7 +505,7 @@ def generar_mapas_calor_adicionales(df: pd.DataFrame):
                         linewidths=0.5, linecolor='white')
             plt.title("Mapa de Calor de Accidentes por Comuna y Jornada", fontsize=14, fontweight='bold')
             plt.xlabel("Jornada", fontsize=12, fontweight='bold')
-            plt.ylabel("Comuna", fontsize=12, fontweight='bold')
+            plt.ylabel(" ", fontsize=12, fontweight='bold')
             plt.xticks(rotation=0)
             plt.tight_layout()
             plt.savefig(OUT_DIR / "GRAVEDAD_COMUNA.jpg", dpi=300, format='jpg', bbox_inches='tight')
@@ -562,7 +556,7 @@ def analisis_rapido(df: pd.DataFrame):
             jornada_series,
             "CANTIDAD DE ACCIDENTES POR JORNADA",
             "Número de Accidentes", 
-            "Franja Horaria",
+            " ",
             OUT_DIR / "Accidentes_Jornada.jpg"
         )
         
@@ -745,7 +739,7 @@ def matriz_confusion_vibrante(y_test, y_pred, model_name="Modelo"):
         ax.set_xticklabels(class_names, fontsize=11, fontweight='bold', color='#2C3E50')
         ax.set_yticklabels(class_names, fontsize=11, fontweight='bold', color='#2C3E50', rotation=0)
         ax.set_xlabel('PREDICCIÓN DEL MODELO', fontsize=12, fontweight='bold', labelpad=15, color='#2C3E50')
-        ax.set_ylabel('REAL', fontsize=12, fontweight='bold', labelpad=15, color='#2C3E50')
+        ax.set_ylabel(' ', fontsize=12, fontweight='bold', labelpad=15, color='#2C3E50')
         
         title = f'MATRIZ DE CONFUSIÓN - {model_name.upper()}'
         ax.set_title(title, fontsize=14, fontweight='bold', pad=20, color='#2C3E50')
