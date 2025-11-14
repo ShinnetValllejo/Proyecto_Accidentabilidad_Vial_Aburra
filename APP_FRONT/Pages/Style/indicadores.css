@@ -120,7 +120,7 @@
    TARJETAS DE MÉTRICAS
    ============================================================ */
 .metric-card {
-    background-color: rgba(255, 255, 255, 0.92);
+    background-color: rgb(5, 27, 28);
     border-radius: 10px;
     padding: 0.7rem 1rem;
     margin: 0.2rem;
@@ -132,7 +132,7 @@
     transform: translateY(-1.5px);
 }
 .metric-card .metric-title {
-    font-size: 0.9rem;
+    font-size: 1.5rem;
     font-weight: 600;
     color: #333;
     margin-bottom: 0.25rem;
@@ -140,7 +140,7 @@
 .metric-card .metric-value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #0D47A1;
+    color: #022253;
 }
 
 /* ============================================================
