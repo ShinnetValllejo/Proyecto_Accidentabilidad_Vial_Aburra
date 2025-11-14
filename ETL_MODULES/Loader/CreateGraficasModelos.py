@@ -191,67 +191,67 @@ def format_torta(series: pd.Series, title: str, path: Path):
 
 
 def format_barra(series: pd.Series, title: str, xlabel: str, ylabel: str, path: Path):
-    """Genera gráfica de barras horizontal con mejor legibilidad"""
+    """Gráfica de barras horizontal con etiquetas avanzadas (valor + porcentaje)."""
     try:
-        series = series.copy()
-        mask = (~series.index.isna()) & (series.index.notna()) & (series.notna())
-        series = series[mask]
-        
-        series = series[~series.index.str.contains('DESCONOCIDO|SIN INFORMACIÓN|NAN', case=False, na=False)]
-        
-        if series.empty or len(series) == 0:
-            print(f"No hay datos válidos para: {title}")
-            fig, ax = plt.subplots(figsize=(10, 6), facecolor='white')
-            ax.text(0.5, 0.5, "No hay datos válidos", 
-                   ha='center', va='center', transform=ax.transAxes, 
-                   fontsize=16, fontweight='bold', color='#2C3E50')
-            ax.set_title(title, fontsize=18, fontweight='bold', pad=20, color='#2C3E50')
+        series = series.dropna()
+        if series.empty:
+            fig, ax = plt.subplots(figsize=(12, 6))
+            ax.set(title=title, xlabel=xlabel, ylabel=ylabel)
             save_fig(fig, path)
             return
-        
         series = series.sort_values(ascending=True)
         values = series.values.astype(float)
-        
-        plt.rcParams['font.size'] = 10
-        plt.rcParams['axes.titleweight'] = 'bold'
-        plt.rcParams['axes.labelweight'] = 'bold'
-        
-        fig, ax = plt.subplots(figsize=(16, 12), facecolor='white')
-        ax.set_facecolor('#F8F9F9')
+        fig, ax = plt.subplots(figsize=(16, 10), facecolor="white")
+        ax.set_facecolor("#F8F9F9")
         colors = paleta_presentacion(len(series))
-        
-        bars = ax.barh(range(len(series)), values, color=colors, alpha=0.85,
-                      edgecolor='white', linewidth=1.2, height=0.7)
-        
-        max_val = max(values)
-        for i, (val, bar) in enumerate(zip(values, bars)):
-            width = bar.get_width()
-            
-            if width >= max_val * 0.1:
-                ax.text(width * 0.95, i, f"{num_fmt(val)}",
-                       ha='right', va='center', fontweight='bold', 
-                       fontsize=9, color='white',
-                       bbox=dict(boxstyle="round,pad=0.1", facecolor='black', alpha=0.7, edgecolor='none'))
-            else:
-                ax.text(width + max_val * 0.01, i, f"{num_fmt(val)}",
-                       ha='left', va='center', fontweight='bold', 
-                       fontsize=9, color='#2C3E50')
-        
-        ax.set_yticks(range(len(series)))
-        ax.set_yticklabels(series.index, fontsize=10, fontweight='bold')
-        ax.set_xlabel(xlabel, fontsize=12, fontweight='bold', color='#2C3E50', labelpad=12)
-        ax.set_ylabel(ylabel, fontsize=12, fontweight='bold', color='#2C3E50', labelpad=12)
-        ax.set_title(title, fontsize=16, fontweight='bold', pad=20, color='#2C3E50')
-        
-        ax.grid(True, axis='x', linestyle='--', alpha=0.5, color='#BDC3C7')
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_color('#BDC3C7')
-        ax.spines['bottom'].set_color('#BDC3C7')
-        
-        plt.tight_layout()
+        bars = ax.barh(
+            series.index,
+            values,
+            color=colors,
+            edgecolor="white",
+            linewidth=1.2,
+            height=0.7,
+            alpha=0.9
+        )
+        total = values.sum() or 1
+        max_w = values.max() or 1
+        for bar, val in zip(bars, values):
+            w = bar.get_width()
+            y = bar.get_y() + bar.get_height() / 2
+            pct = (val / total) * 100
+            rel = w / max_w
+            color = "white" if rel >= 0.12 else "#2C3E50"
+            label = f"{num_fmt(val)} ({pct:.1f}%)"
+            if rel >= 0.12:   # Dentro de la barra
+                ax.text(
+                    w * 0.5, y, label,
+                    ha="center", va="center",
+                    fontsize=10, fontweight="bold", color=color,
+                    bbox=dict(
+                        boxstyle="round,pad=0.15",
+                        facecolor="black",
+                        alpha=0.55
+                    ) if color == "white" else None
+                )
+            else:             # Fuera de la barra
+                ax.text(
+                    w + max_w * 0.015, y, label,
+                    ha="left", va="center",
+                    fontsize=10, fontweight="bold", color=color
+                )
+
+        ax.set_title(title, fontsize=16, fontweight="bold", pad=20, color="#2C3E50")
+        ax.set_xlabel(xlabel, fontsize=12, fontweight="bold", color="#2C3E50")
+        ax.set_ylabel(ylabel, fontsize=12, fontweight="bold", color="#2C3E50")
+        ax.grid(True, axis="x", linestyle="--", alpha=0.5, color="#BDC3C7")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_color("#BDC3C7")
+        ax.spines["bottom"].set_color("#BDC3C7")
+
+        fig.tight_layout()
         save_fig(fig, path)
-        
+
     except Exception as e:
         print(f"Error en gráfica de barras '{title}': {e}")
 
@@ -578,7 +578,7 @@ def analisis_rapido(df: pd.DataFrame):
             comuna_series,
             "TOP 10 - COMUNAS CON MÁS ACCIDENTES",
             "Número de Accidentes", 
-            "Comuna",
+            " ",
             OUT_DIR / "Accidentes_Comuna.jpg"
         )
         
