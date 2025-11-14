@@ -159,7 +159,7 @@ def mostrar_indicadores():
     # VISUALIZACIÓN DE GRÁFICAS
     # ==========================================================
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown("<h3 class='graph-title'>Evolución Temporal por Gravedad</h3>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center;'><h3>Gravedad Accidentes por Año_Mes </h3></div>", unsafe_allow_html=True)
     _, col_centro, _ = st.columns([0.5, 2, 0.5])
     
     with col_centro:
@@ -170,7 +170,7 @@ def mostrar_indicadores():
             st.warning(f"Gráfica no encontrada: {img_clase_path.name}")
     
     # Matrices de confusión lado a lado
-    st.markdown("### Accidentes por Gravedad y Clase")
+    st.markdown("<div style='text-align:center;'><h3>Accidentes por Gravedad y Clase </h3></div>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     
     with col1:

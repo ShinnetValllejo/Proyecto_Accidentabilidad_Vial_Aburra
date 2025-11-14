@@ -114,7 +114,7 @@ def mostrar_clasificacion():
     # ==========================================================
     
     # Matrices de confusión lado a lado
-    st.markdown("### Matrices de Confusión")
+    st.markdown("<div style='text-align:center;'><h3>Matrices de Confusión</h3></div>", unsafe_allow_html=True)    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -132,7 +132,7 @@ def mostrar_clasificacion():
             st.warning("Matriz de Confusión - Random Forest no encontrada")
     
     # Comparación de modelos y curva ROC lado a lado con altura fija
-    st.markdown("### Métricas de Comparación")
+    st.markdown("<div style='text-align:center;'><h3>Métricas de Comparación</h3></div>", unsafe_allow_html=True)    
     col3, col4 = st.columns(2)
     
     # CSS para forzar la misma altura en ambas gráficas

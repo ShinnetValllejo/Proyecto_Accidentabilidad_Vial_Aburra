@@ -133,8 +133,7 @@ def mostrar_gravedad():
     """, unsafe_allow_html=True)
     
     # ✅ PRIMER PAR: Accidentes por Comuna y Jornada
-    st.markdown("### Distribución de Accidentes por Comuna y Jornada")
-    
+    st.markdown("<div style='text-align:center;'><h3>Distribución de Accidentes por Comuna y Jornada</h3></div>", unsafe_allow_html=True)    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -161,8 +160,7 @@ def mostrar_gravedad():
     st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
     
     # ✅ SEGUNDO PAR: Gravedad por Comuna y Hora/Día
-    st.markdown("### Análisis de Gravedad y Distribución Temporal")
-    
+    st.markdown("<div style='text-align:center;'><h3>Análisis de Gravedad y Distribución Temporal</h3></div>", unsafe_allow_html=True)    
     col3, col4 = st.columns(2)
     
     with col3:
