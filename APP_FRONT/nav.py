@@ -17,7 +17,7 @@ def generar_barra_navegacion():
     with col_gravedad:
         st.button("🚑 Gravedad Accidente", on_click=cambiar_pagina, args=("gravedad",), disabled=(pagina_actual == "gravedad"), key="nav_gravedad")
     with col_clasif:
-        st.button("🔬 Modelo de Clasificación", on_click=cambiar_pagina, args=("clasificacion",), disabled=(pagina_actual == "clasificacion"), key="nav_clasificacion")
+        st.button("🔬 Entrenamiento y Evaluación", on_click=cambiar_pagina, args=("clasificacion",), disabled=(pagina_actual == "clasificacion"), key="nav_clasificacion")
     with col_pred:
         st.button("🔮 Modelo Predictivo", on_click=cambiar_pagina, args=("predictivo",), disabled=(pagina_actual == "predictivo"), key="nav_predictivo")
     
