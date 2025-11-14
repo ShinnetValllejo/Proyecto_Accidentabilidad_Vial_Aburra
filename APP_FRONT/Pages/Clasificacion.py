@@ -1,6 +1,5 @@
-
 # ==========================================================
-# MÓDULO: CLASIFICACION
+# MÓDULO: ENTRENAMIENTO Y EVALUACION
 # ==========================================================
 
 import streamlit as st

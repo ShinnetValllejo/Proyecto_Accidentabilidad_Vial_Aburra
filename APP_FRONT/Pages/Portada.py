@@ -97,7 +97,7 @@ def mostrar_portada():
             st.rerun()
 
     with col3:
-        if st.button("🔬 Modelo de Clasificación", use_container_width=True):
+        if st.button("🔬 Entrenamiento y Evaluación", use_container_width=True):
             st.session_state["pagina"] = "clasificacion"
             st.rerun()
 
